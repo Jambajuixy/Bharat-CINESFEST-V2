@@ -1,0 +1,8 @@
+{
+  "name": "Bharat CINEFEST",
+  "description": "A high-glamour web application for independent filmmakers to host festivals, participate in competitions, and schedule premieres with a red-carpet aesthetic.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
