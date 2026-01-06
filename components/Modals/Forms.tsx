@@ -10,6 +10,13 @@ interface FormProps {
 
 const GENRES = ['Drama', 'Sci-Fi', 'Noir', 'Documentary', 'Action', 'Horror', 'Animation', 'Abstract', 'Experimental'];
 
+const YT_REGEX = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+
+const isValidYT = (url: string) => {
+  const match = url.match(YT_REGEX);
+  return match && match[2].length === 11;
+};
+
 const MovieTypeToggle: React.FC<{ isAi: boolean, onChange: (val: boolean) => void }> = ({ isAi, onChange }) => (
   <div className="flex p-1 bg-neutral-800 rounded-xl border border-neutral-700">
     <button
@@ -41,10 +48,15 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
   });
   const [agreed, setAgreed] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [ytError, setYtError] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
+    if (!isValidYT(formData.youtubeUrl)) {
+      setYtError(true);
+      return;
+    }
     setPaying(true);
     setTimeout(() => {
       addFilm({
@@ -99,7 +111,18 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-1">YouTube Link</label>
-          <input required type="url" value={formData.youtubeUrl} onChange={e => setFormData({...formData, youtubeUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors" placeholder="https://youtube.com/..." />
+          <input 
+            required 
+            type="url" 
+            value={formData.youtubeUrl} 
+            onChange={e => {
+              setFormData({...formData, youtubeUrl: e.target.value});
+              setYtError(false);
+            }} 
+            className={`w-full bg-neutral-800 border rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors ${ytError ? 'border-red-500' : 'border-neutral-700'}`} 
+            placeholder="https://youtube.com/..." 
+          />
+          {ytError && <p className="text-[8px] text-red-500 mt-1 ml-1 font-bold uppercase tracking-widest">Invalid YouTube URL</p>}
         </div>
         <div>
           <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-1">Thumbnail URL</label>
@@ -134,6 +157,7 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
   const [selectedGenreFilter, setSelectedGenreFilter] = useState('All Genres');
   const [agreed, setAgreed] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [ytError, setYtError] = useState(false);
 
   const filteredFilms = useMemo(() => {
     let list = films.filter(f => f.creatorId === user?.id && (f.isAiGenerated === formData.isAiGenerated));
@@ -141,14 +165,12 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
     return list;
   }, [films, user, formData.isAiGenerated, selectedGenreFilter]);
 
-  // Set initial competition if available
   useEffect(() => {
     if (competitions.length > 0 && !selectedComp) {
       setSelectedComp(competitions[0].id);
     }
   }, [competitions]);
 
-  // Handle film selection to pre-fill
   useEffect(() => {
     if (selectedFilmId) {
       const film = films.find(f => f.id === selectedFilmId);
@@ -161,6 +183,7 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
           isAiGenerated: film.isAiGenerated || false,
           genre: film.genre
         });
+        setYtError(false);
       }
     }
   }, [selectedFilmId, films]);
@@ -168,6 +191,10 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
+    if (!isValidYT(formData.youtubeUrl)) {
+      setYtError(true);
+      return;
+    }
     setPaying(true);
     setTimeout(() => {
       addFilm({
@@ -247,7 +274,18 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
 
         <div>
           <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-1">YouTube Entry Link</label>
-          <input required type="url" value={formData.youtubeUrl} onChange={e => setFormData({...formData, youtubeUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors" placeholder="https://youtube.com/watch?v=..." />
+          <input 
+            required 
+            type="url" 
+            value={formData.youtubeUrl} 
+            onChange={e => {
+              setFormData({...formData, youtubeUrl: e.target.value});
+              setYtError(false);
+            }} 
+            className={`w-full bg-neutral-800 border rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors ${ytError ? 'border-red-500' : 'border-neutral-700'}`} 
+            placeholder="https://youtube.com/watch?v=..." 
+          />
+          {ytError && <p className="text-[8px] text-red-500 mt-1 ml-1 font-bold uppercase tracking-widest">Invalid YouTube URL</p>}
         </div>
 
         <div>
@@ -273,7 +311,6 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
               <div className="text-[9px] text-amber-500/60 mt-1 font-bold uppercase tracking-tight">Reward: {comp.prize}</div>
             </div>
           ))}
-          {competitions.length === 0 && <p className="text-[10px] text-neutral-500 italic p-4 text-center">No active competitions.</p>}
         </div>
       </div>
       
@@ -305,6 +342,7 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
   const [premiereDate, setPremiereDate] = useState('');
   const [agreed, setAgreed] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [ytError, setYtError] = useState(false);
 
   const filteredFilms = useMemo(() => {
     let list = films.filter(f => f.creatorId === user?.id && (f.isAiGenerated === formData.isAiGenerated));
@@ -312,7 +350,6 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
     return list;
   }, [films, user, formData.isAiGenerated, selectedGenreFilter]);
 
-  // Handle film selection to pre-fill
   useEffect(() => {
     if (selectedFilmId) {
       const film = films.find(f => f.id === selectedFilmId);
@@ -325,6 +362,7 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
           isAiGenerated: film.isAiGenerated || false,
           genre: film.genre
         });
+        setYtError(false);
       }
     }
   }, [selectedFilmId, films]);
@@ -332,6 +370,10 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreed) return;
+    if (!isValidYT(formData.youtubeUrl)) {
+      setYtError(true);
+      return;
+    }
     setPaying(true);
     setTimeout(() => {
       addFilm({
@@ -408,7 +450,18 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
 
         <div>
           <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-1">Full Film / Trailer URL</label>
-          <input required type="url" value={formData.youtubeUrl} onChange={e => setFormData({...formData, youtubeUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors" placeholder="https://youtube.com/..." />
+          <input 
+            required 
+            type="url" 
+            value={formData.youtubeUrl} 
+            onChange={e => {
+              setFormData({...formData, youtubeUrl: e.target.value});
+              setYtError(false);
+            }} 
+            className={`w-full bg-neutral-800 border rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors ${ytError ? 'border-red-500' : 'border-neutral-700'}`} 
+            placeholder="https://youtube.com/..." 
+          />
+          {ytError && <p className="text-[8px] text-red-500 mt-1 ml-1 font-bold uppercase tracking-widest">Invalid YouTube URL</p>}
         </div>
 
         <div>

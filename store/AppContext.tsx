@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { User, Film, UserRole, PaymentRecord, FilmCategory, Comment, Competition, Advertisement, DirectorInterview } from '../types';
 import { COMPETITIONS as INITIAL_COMPETITIONS, FEATURED_INTERVIEWS as INITIAL_INTERVIEWS, TEST_FILMS } from '../constants';
 
@@ -42,14 +42,16 @@ interface AppState {
 
 const AppContext = createContext<AppState | undefined>(undefined);
 
-const STORAGE_KEY_USERS = 'cinefest_users_metadata_v2';
-const STORAGE_KEY_SESSION = 'cinefest_session_id_v2';
-const STORAGE_KEY_FILMS = 'cinefest_films_metadata_v2';
-const STORAGE_KEY_VOTES = 'cinefest_user_reactions_v2';
-const STORAGE_KEY_RATINGS = 'cinefest_user_star_ratings_v2';
-const STORAGE_KEY_COMPS = 'cinefest_competitions_v2';
-const STORAGE_KEY_ADS = 'cinefest_ads_v2';
-const STORAGE_KEY_INTERVIEWS = 'cinefest_interviews_v2';
+const STORAGE_KEYS = {
+  USERS: 'cinefest_users_metadata_v3',
+  SESSION: 'cinefest_session_id_v3',
+  FILMS: 'cinefest_films_metadata_v3',
+  VOTES: 'cinefest_user_reactions_v3',
+  RATINGS: 'cinefest_user_star_ratings_v3',
+  COMPS: 'cinefest_competitions_v3',
+  ADS: 'cinefest_ads_v3',
+  INTERVIEWS: 'cinefest_interviews_v3',
+};
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -64,10 +66,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [knownUsers, setKnownUsers] = useState<User[]>([]);
 
-  // Hydrate State
+  // Initial Hydration
   useEffect(() => {
-    const savedUsers = localStorage.getItem(STORAGE_KEY_USERS);
-    const initialUsers = savedUsers ? JSON.parse(savedUsers) : [
+    const hydrate = <T,>(key: string, fallback: T): T => {
+      const saved = localStorage.getItem(key);
+      return saved ? JSON.parse(saved) : fallback;
+    };
+
+    const initialUsers = hydrate(STORAGE_KEYS.USERS, [
       {
         id: 'dir-01',
         name: 'Festival Director',
@@ -78,29 +84,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         lastActive: new Date().toISOString(),
         joinedAt: '2023-01-01T09:00:00Z'
       }
-    ];
+    ]);
     setKnownUsers(initialUsers);
 
-    const sessionId = localStorage.getItem(STORAGE_KEY_SESSION);
+    const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION);
     if (sessionId) {
       const activeUser = initialUsers.find((u: User) => u.id === sessionId);
       if (activeUser) setUser(activeUser);
     }
 
-    const savedFilms = localStorage.getItem(STORAGE_KEY_FILMS);
-    setFilms(savedFilms ? JSON.parse(savedFilms) : TEST_FILMS);
-
-    const savedVotes = localStorage.getItem(STORAGE_KEY_VOTES);
-    if (savedVotes) setVotedFilmIds(JSON.parse(savedVotes));
-
-    const savedRatings = localStorage.getItem(STORAGE_KEY_RATINGS);
-    if (savedRatings) setUserRatings(JSON.parse(savedRatings));
-
-    const savedComps = localStorage.getItem(STORAGE_KEY_COMPS);
-    setCompetitions(savedComps ? JSON.parse(savedComps) : INITIAL_COMPETITIONS);
-
-    const savedAds = localStorage.getItem(STORAGE_KEY_ADS);
-    setAdvertisements(savedAds ? JSON.parse(savedAds) : [
+    setFilms(hydrate(STORAGE_KEYS.FILMS, TEST_FILMS));
+    setVotedFilmIds(hydrate(STORAGE_KEYS.VOTES, []));
+    setUserRatings(hydrate(STORAGE_KEYS.RATINGS, {}));
+    setCompetitions(hydrate(STORAGE_KEYS.COMPS, INITIAL_COMPETITIONS));
+    setInterviews(hydrate(STORAGE_KEYS.INTERVIEWS, INITIAL_INTERVIEWS));
+    setAdvertisements(hydrate(STORAGE_KEYS.ADS, [
       {
         id: 'ad-contest',
         title: 'Global Indie Gems',
@@ -112,44 +110,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isActive: true,
         targetForm: 'competition',
         imageUrl: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&q=80&w=1600'
-      },
-      {
-        id: 'ad-premiere',
-        title: 'The Silent Monsoon',
-        subtitle: 'UPCOMING PREMIERE',
-        description: 'Book your seat for the grand live screening of the years most anticipated short.',
-        actionText: 'Reserve My Slot',
-        entryFee: 800,
-        isActive: true,
-        targetForm: 'premiere',
-        videoUrl: 'https://www.youtube.com/watch?v=yW8nS-r9R8I',
-        imageUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=1600'
-      },
-      {
-        id: 'ad-trailer',
-        title: 'Neural Dreams Vol. 2',
-        subtitle: 'TRAILER PREVIEW',
-        description: 'Watch the official trailer for the leading entry in our AI Hall of Fame.',
-        actionText: 'Watch Full Trailer',
-        isActive: true,
-        targetForm: 'festival',
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-        imageUrl: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&q=80&w=1600'
       }
-    ]);
-
-    const savedInterviews = localStorage.getItem(STORAGE_KEY_INTERVIEWS);
-    setInterviews(savedInterviews ? JSON.parse(savedInterviews) : INITIAL_INTERVIEWS);
+    ]));
   }, []);
 
-  // Persistence Hooks
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_FILMS, JSON.stringify(films)); }, [films]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_VOTES, JSON.stringify(votedFilmIds)); }, [votedFilmIds]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_RATINGS, JSON.stringify(userRatings)); }, [userRatings]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(knownUsers)); }, [knownUsers]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_ADS, JSON.stringify(advertisements)); }, [advertisements]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_COMPS, JSON.stringify(competitions)); }, [competitions]);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY_INTERVIEWS, JSON.stringify(interviews)); }, [interviews]);
+  // Unified Persistence Effect - Debounced to prevent thrashing
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(films));
+      localStorage.setItem(STORAGE_KEYS.VOTES, JSON.stringify(votedFilmIds));
+      localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify(userRatings));
+      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(knownUsers));
+      localStorage.setItem(STORAGE_KEYS.ADS, JSON.stringify(advertisements));
+      localStorage.setItem(STORAGE_KEYS.COMPS, JSON.stringify(competitions));
+      localStorage.setItem(STORAGE_KEYS.INTERVIEWS, JSON.stringify(interviews));
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [films, votedFilmIds, userRatings, knownUsers, advertisements, competitions, interviews]);
 
   const login = useCallback(() => setShowAuthModal(true), []);
 
@@ -171,7 +148,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       
       setKnownUsers(prev => [...prev, newUser]);
-      localStorage.setItem(STORAGE_KEY_SESSION, newUser.id);
+      localStorage.setItem(STORAGE_KEYS.SESSION, newUser.id);
       setUser(newUser);
       setIsAuthenticating(false);
       setShowAuthModal(false);
@@ -184,7 +161,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     if (existingUser) {
       setUser(existingUser);
-      localStorage.setItem(STORAGE_KEY_SESSION, existingUser.id);
+      localStorage.setItem(STORAGE_KEYS.SESSION, existingUser.id);
       setShowAuthModal(false);
       return true;
     }
@@ -193,7 +170,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = useCallback(() => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY_SESSION);
+    localStorage.removeItem(STORAGE_KEYS.SESSION);
     window.location.hash = '#/';
   }, []);
 
