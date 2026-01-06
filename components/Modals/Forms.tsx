@@ -17,14 +17,14 @@ const MovieTypeToggle: React.FC<{ isAi: boolean, onChange: (val: boolean) => voi
       onClick={() => onChange(false)}
       className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${!isAi ? 'bg-amber-500 text-black shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
     >
-      Human Cinema
+      Human Hall
     </button>
     <button
       type="button"
       onClick={() => onChange(true)}
       className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${isAi ? 'bg-white text-black shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
     >
-      AI Cinema
+      AI Hall
     </button>
   </div>
 );
@@ -70,7 +70,7 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
       </p>
 
       <div className="space-y-1">
-        <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-1">Movie Type</label>
+        <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-1">Screening Hall</label>
         <MovieTypeToggle isAi={formData.isAiGenerated} onChange={(val) => setFormData({...formData, isAiGenerated: val})} />
       </div>
 
@@ -224,7 +224,7 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
 
       <div className="space-y-4 pt-2">
         <div className="space-y-1">
-          <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-1">Movie Hall</label>
+          <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-1">Competition Hall</label>
           <MovieTypeToggle isAi={formData.isAiGenerated} onChange={(val) => setFormData({...formData, isAiGenerated: val})} />
         </div>
 
@@ -385,7 +385,7 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
 
       <div className="space-y-4 pt-2">
         <div className="space-y-1">
-          <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-1">Hall Preference</label>
+          <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest ml-1">Gala Premiere Hall</label>
           <MovieTypeToggle isAi={formData.isAiGenerated} onChange={(val) => setFormData({...formData, isAiGenerated: val})} />
         </div>
 

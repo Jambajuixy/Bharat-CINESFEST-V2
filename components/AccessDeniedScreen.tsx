@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../store/AppContext';
+import ProgramGuideModal from './Modals/ProgramGuideModal';
 
 const AccessDeniedScreen: React.FC = () => {
   const { login } = useAppContext();
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   return (
     <div className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-black">
@@ -49,6 +51,13 @@ const AccessDeniedScreen: React.FC = () => {
             Enter the Gala
           </button>
           
+          <button 
+            onClick={() => setIsGuideOpen(true)}
+            className="text-[10px] text-neutral-500 hover:text-amber-500 font-bold uppercase tracking-[0.3em] transition-colors"
+          >
+            View Program Guide
+          </button>
+          
           <div className="flex items-center gap-3">
             <span className="h-px w-8 bg-neutral-800"></span>
             <span className="text-[9px] text-neutral-600 font-bold uppercase tracking-[0.3em]">Identity Secure Access</span>
@@ -61,6 +70,7 @@ const AccessDeniedScreen: React.FC = () => {
       <div className="absolute bottom-12 left-0 right-0 max-w-4xl mx-auto px-6 opacity-30">
         <div className="velvet-rope w-full"></div>
       </div>
+      <ProgramGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
     </div>
   );
 };

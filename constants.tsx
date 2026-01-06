@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { DirectorInterview, Competition } from './types';
+import { DirectorInterview, Competition, Film, FilmCategory } from './types';
 
-// Added missing 'endsAt' property to satisfy the Competition interface requirements
 export const COMPETITIONS: Competition[] = [
   { id: 'indie-2024', name: 'Global Indie Gems', description: 'Celebrating small crews with big hearts.', prize: '₹1,00,000 INR', entryFee: 2000, endsAt: '2024-12-31T23:59:59Z' },
   { id: 'sci-fi-shorts', name: 'Future Visions', description: 'The best in sci-fi and speculative fiction.', prize: '₹1,00,000 INR', entryFee: 1500, endsAt: '2024-11-15T23:59:59Z' },
@@ -27,6 +26,142 @@ export const FEATURED_INTERVIEWS: DirectorInterview[] = [
     videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     expertise: 'AI Cinematography Pioneer',
     filmTitle: 'Neural Dreams'
+  }
+];
+
+export const TEST_FILMS: Film[] = [
+  // --- HUMAN HALL ---
+  {
+    id: 'film-h1',
+    creatorId: 'dir-01',
+    title: 'The Last Artisan',
+    description: 'A poignant look at the dying art of hand-painted cinema posters in the heart of Mumbai.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=668nUCeB8XY',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-03-01T10:00:00Z',
+    category: FilmCategory.SELECTION,
+    genre: 'Drama',
+    votes: 124,
+    ratingCount: 45,
+    score: 4.8,
+    comments: [],
+    isAiGenerated: false
+  },
+  {
+    id: 'film-h2',
+    creatorId: 'u-abc123',
+    title: 'Ganga\'s Echo',
+    description: 'A cinematic journey through the spiritual and environmental heart of the Ganges river.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=C6pP9H_xG3k',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1588180864334-959735a8999f?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-03-05T14:30:00Z',
+    category: FilmCategory.PREMIERE,
+    genre: 'Documentary',
+    votes: 560,
+    ratingCount: 120,
+    score: 4.9,
+    comments: [],
+    isAiGenerated: false
+  },
+  {
+    id: 'film-h3',
+    creatorId: 'u-def456',
+    title: 'Midnight in Mumbai',
+    description: 'A high-octane noir thriller set in the rain-slicked streets of a city that never sleeps.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=yW8nS-r9R8I',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1576085898323-2181577e3244?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-03-10T18:00:00Z',
+    category: FilmCategory.CONTEST,
+    genre: 'Noir',
+    votes: 342,
+    ratingCount: 88,
+    score: 4.5,
+    isContestActive: true,
+    comments: [],
+    isAiGenerated: false
+  },
+  {
+    id: 'film-h4',
+    creatorId: 'dir-01',
+    title: 'Bazaar of Shadows',
+    description: 'When an antique dealer finds a camera that captures the past, his life becomes a mystery.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=8Xq7I-UAt54',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1533929736458-ca588d08c8be?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-02-15T09:00:00Z',
+    category: FilmCategory.SELECTION,
+    genre: 'Mystery',
+    votes: 89,
+    ratingCount: 22,
+    score: 4.2,
+    comments: [],
+    isAiGenerated: false
+  },
+
+  // --- AI HALL ---
+  {
+    id: 'film-a1',
+    creatorId: 'visionary',
+    title: 'Synthetica',
+    description: 'A neural-generated odyssey through a world where dreams and digital signals collide.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-03-12T11:00:00Z',
+    category: FilmCategory.SELECTION,
+    genre: 'Sci-Fi',
+    votes: 210,
+    ratingCount: 67,
+    score: 4.7,
+    comments: [],
+    isAiGenerated: true
+  },
+  {
+    id: 'film-a2',
+    creatorId: 'u-ai-artist',
+    title: 'Coded Dreams',
+    description: 'The first full-length AI premiere exploring the subconscious of an artificial mind.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-03-20T20:00:00Z',
+    category: FilmCategory.PREMIERE,
+    genre: 'Experimental',
+    votes: 890,
+    ratingCount: 210,
+    score: 4.9,
+    comments: [],
+    isAiGenerated: true
+  },
+  {
+    id: 'film-a3',
+    creatorId: 'u-neural',
+    title: 'Neural Odyssey',
+    description: 'Competing in the AI Hall of Fame, this piece showcases the limits of generative cinematography.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-03-15T15:00:00Z',
+    category: FilmCategory.CONTEST,
+    genre: 'Sci-Fi',
+    votes: 423,
+    ratingCount: 95,
+    score: 4.6,
+    isContestActive: true,
+    comments: [],
+    isAiGenerated: true
+  },
+  {
+    id: 'film-a4',
+    creatorId: 'visionary',
+    title: 'Digital Soul',
+    description: 'An abstract exploration of what it means to be alive in an era of pure data.',
+    youtubeUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    thumbnailUrl: 'https://images.unsplash.com/photo-1635332043388-5a4141119730?auto=format&fit=crop&q=80&w=1200',
+    uploadDate: '2024-01-10T12:00:00Z',
+    category: FilmCategory.SELECTION,
+    genre: 'Abstract',
+    votes: 156,
+    ratingCount: 40,
+    score: 4.3,
+    comments: [],
+    isAiGenerated: true
   }
 ];
 

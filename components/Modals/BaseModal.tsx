@@ -13,7 +13,7 @@ const BaseModal: React.FC<BaseModalProps> = ({ isOpen, onClose, title, children 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-neutral-900 border border-amber-500/20 rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+      <div className="w-full max-w-2xl bg-neutral-900 border border-amber-500/20 rounded-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
         <div className="bg-red-carpet px-5 py-3 flex justify-between items-center border-b border-amber-500/10">
           <h3 className="text-base font-bold font-serif text-white tracking-wider">{title}</h3>
           <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
@@ -22,7 +22,7 @@ const BaseModal: React.FC<BaseModalProps> = ({ isOpen, onClose, title, children 
             </svg>
           </button>
         </div>
-        <div className="p-5 overflow-y-auto max-h-[80vh] bg-neutral-900 text-neutral-200">
+        <div className="p-5 overflow-y-auto max-h-[85vh] bg-neutral-900 text-neutral-200 thin-scrollbar">
           {children}
         </div>
       </div>

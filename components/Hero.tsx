@@ -126,23 +126,22 @@ const Hero: React.FC<HeroProps> = ({ activeHall, onHallSwitch }) => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-20 text-center max-w-4xl px-6 animate-in fade-in slide-in-from-bottom-12 duration-1000">
-        <div className="inline-block px-4 py-1.5 mb-6 border border-amber-500/30 rounded-full bg-amber-500/10 backdrop-blur-md">
+      <div className="relative z-20 text-center max-w-4xl px-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 flex flex-col items-center">
+        <div className="inline-block px-4 py-1.5 mb-4 border border-amber-500/30 rounded-full bg-amber-500/10 backdrop-blur-md">
            <span className="text-amber-400 font-bold tracking-[0.4em] uppercase text-[10px]">A Night of Extraordinary Visions</span>
         </div>
         
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif font-bold mb-4 leading-tight tracking-tight text-white drop-shadow-2xl">
-          The <span className="gold-text italic">Red Carpet</span> <br /> 
-          is Waiting.
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-bold mb-3 leading-tight tracking-tight text-white drop-shadow-2xl">
+          The <span className="gold-text italic">Red Carpet</span> <br className="sm:hidden" /> is Waiting.
         </h1>
         
-        <p className="text-sm sm:text-base text-neutral-300 font-light mb-8 max-w-xl mx-auto leading-relaxed drop-shadow-md">
+        <p className="text-[10px] sm:text-sm text-neutral-300 font-light mb-6 max-w-lg mx-auto leading-relaxed drop-shadow-md">
           Step into the exclusive circle of elite independent filmmaking. 
-          Your masterpiece deserves the world's most glamorous digital stage.
+          Your masterpiece deserves the world's most glamorous stage.
         </p>
 
-        {/* Contest Banner placed above the Participate button */}
-        <div className="max-w-2xl mx-auto mb-10">
+        {/* Contest Banner placed above the Participate button - reduced margin */}
+        <div className="w-full max-w-xl mx-auto mb-6">
           <ContestBanner onAction={(formType) => {
             if (formType) {
               setActiveForm(formType);
@@ -152,14 +151,14 @@ const Hero: React.FC<HeroProps> = ({ activeHall, onHallSwitch }) => {
           }} />
         </div>
 
-        <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-5">
           <button 
             onClick={handleParticipateClick}
-            className="group relative inline-flex items-center gap-3 px-10 py-4 bg-red-carpet gold-glow rounded-full text-white font-bold text-sm uppercase tracking-[0.2em] hover:scale-105 transition-all duration-300 shadow-[0_0_30px_rgba(139,0,0,0.5)]"
+            className="group relative inline-flex items-center gap-3 px-10 py-3.5 bg-red-carpet gold-glow rounded-full text-white font-bold text-xs uppercase tracking-[0.2em] hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(139,0,0,0.3)]"
           >
             <span className="relative z-10">PARTICIPATE</span>
-            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
             <div className="absolute inset-0 rounded-full bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
           </button>
@@ -167,24 +166,24 @@ const Hero: React.FC<HeroProps> = ({ activeHall, onHallSwitch }) => {
           <div className="flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300">
             <button 
               onClick={() => { onHallSwitch('human'); scrollToLibrary(); }}
-              className={`px-8 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
+              className={`px-8 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
                 activeHall === 'human' 
                 ? 'bg-amber-500 text-black border-amber-500 gold-glow scale-105' 
                 : 'bg-black/40 text-neutral-400 border-neutral-800 hover:border-amber-500/50 hover:text-white'
               }`}
             >
-              MOVIES
+              Human Hall
             </button>
             <div className="w-1 h-1 rounded-full bg-neutral-800"></div>
             <button 
               onClick={() => { onHallSwitch('ai'); scrollToLibrary(); }}
-              className={`px-8 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
+              className={`px-8 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all border ${
                 activeHall === 'ai' 
                 ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.3)] scale-105' 
                 : 'bg-black/40 text-neutral-400 border-neutral-800 hover:border-amber-500/50 hover:text-white'
               }`}
             >
-              AI MOVIES
+              AI Hall
             </button>
           </div>
         </div>

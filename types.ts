@@ -80,6 +80,7 @@ export interface Advertisement {
   entryFee?: number;
   isActive: boolean;
   imageUrl?: string;
+  videoUrl?: string; // New field for cinematic backgrounds
   targetForm?: 'festival' | 'competition' | 'premiere';
 }
 

@@ -45,6 +45,7 @@ const Admin: React.FC = () => {
     prize: '',
     entryFee: 0,
     imageUrl: '',
+    videoUrl: '', // New field
     targetForm: 'competition'
   });
 
@@ -112,6 +113,7 @@ const Admin: React.FC = () => {
         prize: '',
         entryFee: 0,
         imageUrl: '',
+        videoUrl: '',
         targetForm: 'competition'
       });
     }
@@ -341,6 +343,9 @@ const Admin: React.FC = () => {
                         <div className="h-28 overflow-hidden relative">
                           <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                          {ad.videoUrl && (
+                            <div className="absolute top-2 right-2 bg-amber-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded-full uppercase">Video BG</div>
+                          )}
                         </div>
                       )}
                       <div className="p-6 space-y-4">
@@ -470,9 +475,15 @@ const Admin: React.FC = () => {
               <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Subtitle / Callout</label>
               <input required value={adForm.subtitle} onChange={e => setAdForm({...adForm, subtitle: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. LIVE AUDITIONS" />
            </div>
-           <div>
-              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Banner Image URL</label>
-              <input value={adForm.imageUrl || ''} onChange={e => setAdForm({...adForm, imageUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://image-url.com/poster.jpg" />
+           <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Thumbnail URL</label>
+                <input value={adForm.imageUrl || ''} onChange={e => setAdForm({...adForm, imageUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://image-url.com/poster.jpg" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Video Background (YouTube)</label>
+                <input value={adForm.videoUrl || ''} onChange={e => setAdForm({...adForm, videoUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://youtube.com/..." />
+              </div>
            </div>
            <div className="grid grid-cols-2 gap-4">
               <div>
@@ -480,7 +491,7 @@ const Admin: React.FC = () => {
                 <select value={adForm.targetForm} onChange={e => setAdForm({...adForm, targetForm: e.target.value as any})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500">
                     <option value="competition">Competition Hall</option>
                     <option value="premiere">Premiere Booking</option>
-                    <option value="festival">Festival Submission</option>
+                    <option value="festival">Movie Trailer / Selection</option>
                 </select>
               </div>
               <div>

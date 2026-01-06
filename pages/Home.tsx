@@ -6,40 +6,7 @@ import { useAppContext } from '../store/AppContext';
 import { Icons } from '../constants';
 import { Film, FilmCategory } from '../types';
 import VideoPlayerModal from '../components/Modals/VideoPlayerModal';
-
-const StarRating: React.FC<{ film: Film }> = ({ film }) => {
-  const { addRating, user, login } = useAppContext();
-  const [hover, setHover] = useState(0);
-
-  const handleRate = (e: React.MouseEvent, rating: number) => {
-    e.stopPropagation();
-    if (!user) { login(); return; }
-    addRating(film.id, rating);
-  };
-
-  return (
-    <div className="flex items-center gap-1 py-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          onMouseEnter={() => setHover(star)}
-          onMouseLeave={() => setHover(0)}
-          onClick={(e) => handleRate(e, star)}
-          className="transition-transform hover:scale-110 active:scale-125"
-        >
-          <Icons.Star 
-            className={`w-3.5 h-3.5 ${
-              (hover || (film.score || 0)) >= star ? 'text-amber-500' : 'text-neutral-800'
-            }`} 
-          />
-        </button>
-      ))}
-      <span className="text-[10px] font-bold text-amber-500 ml-1">
-        {film.score ? film.score.toFixed(1) : 'NR'}
-      </span>
-    </div>
-  );
-};
+import StarRating from '../components/StarRating';
 
 const FilmCard: React.FC<{ film: Film; onPlay: (film: Film) => void }> = ({ film, onPlay }) => {
   const { submitVote, user, login, votedFilmIds } = useAppContext();
@@ -52,6 +19,8 @@ const FilmCard: React.FC<{ film: Film; onPlay: (film: Film) => void }> = ({ film
     submitVote(film.id);
   };
 
+  const isContestFilm = film.category === FilmCategory.CONTEST;
+
   return (
     <div 
       onClick={() => onPlay(film)}
@@ -60,34 +29,75 @@ const FilmCard: React.FC<{ film: Film; onPlay: (film: Film) => void }> = ({ film
       <div className="aspect-video relative overflow-hidden flex-shrink-0">
         <img src={film.thumbnailUrl} alt={film.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/10 to-transparent opacity-50"></div>
+        
+        {/* Play Overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
            <div className="w-12 h-12 bg-red-carpet gold-glow rounded-full flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-transform">
              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
            </div>
+        </div>
+
+        {/* Status Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {film.category === FilmCategory.PREMIERE && (
+            <div className="px-3 py-1 bg-amber-500 text-black text-[8px] font-bold uppercase tracking-widest rounded-full shadow-lg">
+              Gala Premiere
+            </div>
+          )}
+          {isContestFilm && (
+            <div className="px-3 py-1 bg-red-carpet border border-amber-500/30 text-white text-[8px] font-bold uppercase tracking-widest rounded-full shadow-lg flex items-center gap-1.5">
+              <Icons.Trophy className="w-2.5 h-2.5 text-amber-500" />
+              Official Entry
+            </div>
+          )}
+        </div>
+
+        {/* Total Average Rating Badge on Thumbnail */}
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
+          <div className="px-3 py-1 bg-black/70 backdrop-blur-md border border-amber-500/40 text-white rounded-lg shadow-2xl flex items-center gap-2 group-hover:border-amber-500 transition-colors">
+            <Icons.Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+            <span className="text-xs font-serif font-bold tracking-tight">
+              {film.score && film.score > 0 ? film.score.toFixed(1) : 'NR'}
+            </span>
+          </div>
+          
+          {isContestFilm && (
+            <div className="px-2 py-0.5 bg-amber-500/20 backdrop-blur-sm border border-amber-500/20 text-amber-500 text-[8px] font-bold uppercase tracking-widest rounded shadow-lg">
+              {film.votes} Votes
+            </div>
+          )}
         </div>
       </div>
       
       <div className="p-4 flex flex-col flex-grow">
         <div className="mb-2">
           <span className="text-[8px] font-bold text-amber-500/60 uppercase tracking-[0.2em]">{film.category} {film.isAiGenerated && '• AI'}</span>
-          <h3 className="text-base font-serif font-bold mt-0.5 group-hover:text-amber-500 transition-colors">{film.title}</h3>
+          <h3 className="text-base font-serif font-bold mt-0.5 group-hover:text-amber-500 transition-colors line-clamp-1">{film.title}</h3>
         </div>
         
         <p className="text-neutral-500 text-[10px] leading-relaxed line-clamp-2 mb-3">{film.description}</p>
-        <StarRating film={film} />
+        
+        {/* Thumbnail area rating display */}
+        <StarRating film={film} size="sm" />
 
         <div className="mt-auto pt-3 border-t border-neutral-800/40 space-y-3">
-          <button 
-            onClick={handleVote}
-            disabled={hasVoted}
-            className={`w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${
-              hasVoted ? 'bg-neutral-800 text-neutral-500' : 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500 hover:text-black'
-            }`}
-          >
-            {hasVoted ? 'Vote Recorded' : 'Cast Your Vote'}
-          </button>
+          {isContestFilm && (
+            <button 
+              onClick={handleVote}
+              disabled={hasVoted}
+              className={`w-full py-2 rounded-lg text-[9px] font-bold uppercase tracking-widest transition-all ${
+                hasVoted ? 'bg-neutral-800 text-neutral-500' : 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500 hover:text-black'
+              }`}
+            >
+              {hasVoted ? 'Vote Recorded' : 'Cast Your Vote'}
+            </button>
+          )}
+          
           <div className="flex justify-between items-center text-[9px] font-bold text-neutral-600 uppercase tracking-widest">
-             <span>{film.votes} Recognition Points</span>
+             <div className="flex items-center gap-1.5">
+               <span className="text-amber-500/80">{film.votes}</span>
+               <span className="opacity-40">Interactions</span>
+             </div>
              <span className="text-amber-500/50">{film.genre}</span>
           </div>
         </div>

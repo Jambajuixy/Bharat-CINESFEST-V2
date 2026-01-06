@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Film, UserRole, PaymentRecord, FilmCategory, Comment, Competition, Advertisement, DirectorInterview } from '../types';
-import { COMPETITIONS as INITIAL_COMPETITIONS, FEATURED_INTERVIEWS as INITIAL_INTERVIEWS } from '../constants';
+import { COMPETITIONS as INITIAL_COMPETITIONS, FEATURED_INTERVIEWS as INITIAL_INTERVIEWS, TEST_FILMS } from '../constants';
 
 interface AppState {
   user: User | null;
@@ -11,6 +11,7 @@ interface AppState {
   interviews: DirectorInterview[];
   payments: PaymentRecord[];
   votedFilmIds: string[];
+  userRatings: Record<string, number>;
   isAuthenticating: boolean;
   showAuthModal: boolean;
   knownUsers: User[];
@@ -45,6 +46,7 @@ const STORAGE_KEY_USERS = 'cinefest_users_metadata_v2';
 const STORAGE_KEY_SESSION = 'cinefest_session_id_v2';
 const STORAGE_KEY_FILMS = 'cinefest_films_metadata_v2';
 const STORAGE_KEY_VOTES = 'cinefest_user_reactions_v2';
+const STORAGE_KEY_RATINGS = 'cinefest_user_star_ratings_v2';
 const STORAGE_KEY_COMPS = 'cinefest_competitions_v2';
 const STORAGE_KEY_ADS = 'cinefest_ads_v2';
 const STORAGE_KEY_INTERVIEWS = 'cinefest_interviews_v2';
@@ -57,6 +59,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [interviews, setInterviews] = useState<DirectorInterview[]>([]);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [votedFilmIds, setVotedFilmIds] = useState<string[]>([]);
+  const [userRatings, setUserRatings] = useState<Record<string, number>>({});
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [knownUsers, setKnownUsers] = useState<User[]>([]);
@@ -85,10 +88,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const savedFilms = localStorage.getItem(STORAGE_KEY_FILMS);
-    if (savedFilms) setFilms(JSON.parse(savedFilms));
+    setFilms(savedFilms ? JSON.parse(savedFilms) : TEST_FILMS);
 
     const savedVotes = localStorage.getItem(STORAGE_KEY_VOTES);
     if (savedVotes) setVotedFilmIds(JSON.parse(savedVotes));
+
+    const savedRatings = localStorage.getItem(STORAGE_KEY_RATINGS);
+    if (savedRatings) setUserRatings(JSON.parse(savedRatings));
 
     const savedComps = localStorage.getItem(STORAGE_KEY_COMPS);
     setCompetitions(savedComps ? JSON.parse(savedComps) : INITIAL_COMPETITIONS);
@@ -96,13 +102,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedAds = localStorage.getItem(STORAGE_KEY_ADS);
     setAdvertisements(savedAds ? JSON.parse(savedAds) : [
       {
-        id: 'ad-prime',
-        title: 'Submit Your Masterpiece',
-        subtitle: '2024 ENTRIES OPEN',
-        description: 'Join the most prestigious digital film festival and win global recognition.',
-        actionText: 'Register Now',
+        id: 'ad-contest',
+        title: 'Global Indie Gems',
+        subtitle: 'CASH PRIZE REVEALED',
+        description: 'Compete for the ultimate ₹1,00,000 prize pool and global recognition.',
+        actionText: 'Enter Competition',
+        prize: '₹1,00,000 INR',
+        entryFee: 2000,
         isActive: true,
-        targetForm: 'festival'
+        targetForm: 'competition',
+        imageUrl: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&q=80&w=1600'
+      },
+      {
+        id: 'ad-premiere',
+        title: 'The Silent Monsoon',
+        subtitle: 'UPCOMING PREMIERE',
+        description: 'Book your seat for the grand live screening of the years most anticipated short.',
+        actionText: 'Reserve My Slot',
+        entryFee: 800,
+        isActive: true,
+        targetForm: 'premiere',
+        videoUrl: 'https://www.youtube.com/watch?v=yW8nS-r9R8I',
+        imageUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&q=80&w=1600'
+      },
+      {
+        id: 'ad-trailer',
+        title: 'Neural Dreams Vol. 2',
+        subtitle: 'TRAILER PREVIEW',
+        description: 'Watch the official trailer for the leading entry in our AI Hall of Fame.',
+        actionText: 'Watch Full Trailer',
+        isActive: true,
+        targetForm: 'festival',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        imageUrl: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&q=80&w=1600'
       }
     ]);
 
@@ -113,6 +145,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Persistence Hooks
   useEffect(() => { localStorage.setItem(STORAGE_KEY_FILMS, JSON.stringify(films)); }, [films]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_VOTES, JSON.stringify(votedFilmIds)); }, [votedFilmIds]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY_RATINGS, JSON.stringify(userRatings)); }, [userRatings]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(knownUsers)); }, [knownUsers]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_ADS, JSON.stringify(advertisements)); }, [advertisements]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_COMPS, JSON.stringify(competitions)); }, [competitions]);
@@ -230,6 +263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return f;
     }));
+    setUserRatings(prev => ({ ...prev, [filmId]: rating }));
   }, []);
 
   const addCompetition = useCallback((compData: Omit<Competition, 'id'>) => {
@@ -273,7 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
-      user, films, competitions, advertisements, interviews, payments, votedFilmIds, isAuthenticating, showAuthModal, knownUsers,
+      user, films, competitions, advertisements, interviews, payments, votedFilmIds, userRatings, isAuthenticating, showAuthModal, knownUsers,
       login, logout, setShowAuthModal, register, signIn, updateUser, deleteUser, addFilm, updateFilm, deleteFilm, toggleContestStatus, 
       submitVote, addComment, addRating, addCompetition, updateCompetition, deleteCompetition, addAd, updateAd, deleteAd,
       addInterview, updateInterview, deleteInterview
