@@ -18,9 +18,10 @@ interface AppState {
   login: () => void;
   logout: () => void;
   setShowAuthModal: (show: boolean) => void;
-  register: (data: { name: string; bio: string; role: UserRole; gender: string; identifier: string }) => void;
+  register: (data: { name: string; bio: string; role: UserRole; gender: string; email: string; phone: string; identifier: string }) => void;
   signIn: (identifier: string) => boolean;
   updateUser: (data: Partial<User>) => void;
+  adminUpdateUser: (userId: string, data: Partial<User>) => void;
   deleteUser: (id: string) => void;
   addFilm: (film: Omit<Film, 'id' | 'uploadDate' | 'votes' | 'comments' | 'ratingCount' | 'score'>) => void;
   updateFilm: (id: string, data: Partial<Film>) => void;
@@ -69,8 +70,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Initial Hydration
   useEffect(() => {
     const hydrate = <T,>(key: string, fallback: T): T => {
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : fallback;
+      try {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : fallback;
+      } catch (e) {
+        console.error(`Hydration error for ${key}:`, e);
+        return fallback;
+      }
     };
 
     const initialUsers = hydrate(STORAGE_KEYS.USERS, [
@@ -79,6 +85,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: 'Festival Director',
         bio: 'Chief Curator of Bharat CINEFEST.',
         role: UserRole.ADMIN,
+        email: 'director@bharatcinefest.com',
+        phone: '+91 99999 88888',
         principal: 'admin-access-prime',
         avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Director',
         lastActive: new Date().toISOString(),
@@ -90,7 +98,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const sessionId = localStorage.getItem(STORAGE_KEYS.SESSION);
     if (sessionId) {
       const activeUser = initialUsers.find((u: User) => u.id === sessionId);
-      if (activeUser) setUser(activeUser);
+      if (activeUser) {
+        setUser(activeUser);
+        // Refresh timestamp on session resume
+        const now = new Date().toISOString();
+        setKnownUsers(all => all.map(u => u.id === activeUser.id ? { ...u, lastActive: now } : u));
+      }
     }
 
     setFilms(hydrate(STORAGE_KEYS.FILMS, TEST_FILMS));
@@ -114,23 +127,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ]));
   }, []);
 
-  // Unified Persistence Effect - Debounced to prevent thrashing
+  // Sync session and known users to localStorage
   useEffect(() => {
     const timeout = setTimeout(() => {
-      localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(films));
-      localStorage.setItem(STORAGE_KEYS.VOTES, JSON.stringify(votedFilmIds));
-      localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify(userRatings));
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(knownUsers));
-      localStorage.setItem(STORAGE_KEYS.ADS, JSON.stringify(advertisements));
-      localStorage.setItem(STORAGE_KEYS.COMPS, JSON.stringify(competitions));
-      localStorage.setItem(STORAGE_KEYS.INTERVIEWS, JSON.stringify(interviews));
+      try {
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(knownUsers));
+        localStorage.setItem(STORAGE_KEYS.FILMS, JSON.stringify(films));
+        localStorage.setItem(STORAGE_KEYS.VOTES, JSON.stringify(votedFilmIds));
+        localStorage.setItem(STORAGE_KEYS.RATINGS, JSON.stringify(userRatings));
+        localStorage.setItem(STORAGE_KEYS.ADS, JSON.stringify(advertisements));
+        localStorage.setItem(STORAGE_KEYS.COMPS, JSON.stringify(competitions));
+        localStorage.setItem(STORAGE_KEYS.INTERVIEWS, JSON.stringify(interviews));
+      } catch (e) {
+        console.warn("Storage persistence warning (likely quota limit):", e);
+      }
     }, 500);
     return () => clearTimeout(timeout);
   }, [films, votedFilmIds, userRatings, knownUsers, advertisements, competitions, interviews]);
 
   const login = useCallback(() => setShowAuthModal(true), []);
 
-  const register = useCallback((data: { name: string; bio: string; role: UserRole; gender: string; identifier: string }) => {
+  const register = useCallback((data: { name: string; bio: string; role: UserRole; gender: string; email: string; phone: string; identifier: string }) => {
     setIsAuthenticating(true);
     const normalizedId = data.identifier.trim().toLowerCase();
     
@@ -141,6 +158,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bio: data.bio,
         role: data.role,
         gender: data.gender,
+        email: data.email,
+        phone: data.phone,
         principal: normalizedId,
         avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name}`,
         lastActive: new Date().toISOString(),
@@ -160,8 +179,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const existingUser = knownUsers.find(u => u.principal.toLowerCase() === normalizedId);
     
     if (existingUser) {
-      setUser(existingUser);
-      localStorage.setItem(STORAGE_KEYS.SESSION, existingUser.id);
+      const now = new Date().toISOString();
+      const updatedUser = { ...existingUser, lastActive: now };
+      
+      setKnownUsers(prev => prev.map(u => u.id === existingUser.id ? updatedUser : u));
+      setUser(updatedUser);
+      localStorage.setItem(STORAGE_KEYS.SESSION, updatedUser.id);
       setShowAuthModal(false);
       return true;
     }
@@ -177,15 +200,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateUser = useCallback((data: Partial<User>) => {
     setUser(prev => {
       if (!prev) return null;
-      const updated = { ...prev, ...data };
+      const updated = { ...prev, ...data, lastActive: new Date().toISOString() };
+      
+      // Critical: Update the master list immediately to ensure persistence
       setKnownUsers(all => all.map(u => u.id === prev.id ? updated : u));
+      
       return updated;
     });
   }, []);
 
+  const adminUpdateUser = useCallback((userId: string, data: Partial<User>) => {
+    setKnownUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        const updated = { ...u, ...data };
+        // Sync active session if the updated user is the current user
+        if (user?.id === userId) setUser(updated);
+        return updated;
+      }
+      return u;
+    }));
+  }, [user]);
+
   const deleteUser = useCallback((id: string) => {
     setKnownUsers(prev => prev.filter(u => u.id !== id));
-  }, []);
+    if (user?.id === id) logout();
+  }, [user, logout]);
 
   const addFilm = useCallback((filmData: any) => {
     const newFilm: Film = {
@@ -198,7 +237,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       comments: []
     };
     setFilms(prev => [newFilm, ...prev]);
-  }, []);
+    if (user) updateUser({});
+  }, [user, updateUser]);
 
   const updateFilm = useCallback((id: string, data: Partial<Film>) => {
     setFilms(prev => prev.map(f => f.id === id ? { ...f, ...data } : f));
@@ -215,7 +255,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const submitVote = useCallback((filmId: string, amount: number = 1) => {
     setFilms(prev => prev.map(f => f.id === filmId ? { ...f, votes: f.votes + (amount || 1) } : f));
     setVotedFilmIds(prev => [...new Set([...prev, filmId])]);
-  }, []);
+    if (user) updateUser({});
+  }, [user, updateUser]);
 
   const addComment = useCallback((filmId: string, text: string) => {
     if (!user) return;
@@ -227,7 +268,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       date: new Date().toISOString()
     };
     setFilms(prev => prev.map(f => f.id === filmId ? { ...f, comments: [newComment, ...f.comments] } : f));
-  }, [user]);
+    updateUser({});
+  }, [user, updateUser]);
 
   const addRating = useCallback((filmId: string, rating: number) => {
     setFilms(prev => prev.map(f => {
@@ -241,7 +283,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return f;
     }));
     setUserRatings(prev => ({ ...prev, [filmId]: rating }));
-  }, []);
+    if (user) updateUser({});
+  }, [user, updateUser]);
 
   const addCompetition = useCallback((compData: Omit<Competition, 'id'>) => {
     const newComp = { ...compData, id: 'comp-' + Date.now() };
@@ -285,7 +328,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{
       user, films, competitions, advertisements, interviews, payments, votedFilmIds, userRatings, isAuthenticating, showAuthModal, knownUsers,
-      login, logout, setShowAuthModal, register, signIn, updateUser, deleteUser, addFilm, updateFilm, deleteFilm, toggleContestStatus, 
+      login, logout, setShowAuthModal, register, signIn, updateUser, adminUpdateUser, deleteUser, addFilm, updateFilm, deleteFilm, toggleContestStatus, 
       submitVote, addComment, addRating, addCompetition, updateCompetition, deleteCompetition, addAd, updateAd, deleteAd,
       addInterview, updateInterview, deleteInterview
     }}>

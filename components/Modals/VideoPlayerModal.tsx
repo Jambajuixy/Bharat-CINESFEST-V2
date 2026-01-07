@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import BaseModal from './BaseModal';
 import { Film, FilmCategory } from '../../types';
 import { Icons } from '../../constants';
@@ -31,6 +31,23 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ film, isOpen, onClo
   
   const [hasApplauded, setHasApplauded] = useState(false);
   const [hasOvated, setHasOvated] = useState(false);
+
+  // Pre-load audio for instant feedback
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(APPLAUSE_SOUND_URL);
+    audio.preload = 'auto';
+    audio.volume = 0.8;
+    audioRef.current = audio;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (film) {
@@ -132,9 +149,13 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ film, isOpen, onClo
 
   const handleInteraction = (type: 'applause' | 'ovation', amount: number) => {
     if (!user) { login(); return; }
-    const audio = new Audio(APPLAUSE_SOUND_URL);
-    audio.volume = 0.8;
-    audio.play().catch(e => {});
+    
+    // Immediate realtime play
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(e => {});
+    }
+
     submitVote(film.id, amount);
     if (type === 'applause') setHasApplauded(true);
     if (type === 'ovation') setHasOvated(true);
@@ -206,7 +227,7 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ film, isOpen, onClo
                 <div className="flex-1"><span className="text-[8px] font-bold text-amber-500 uppercase tracking-widest block mb-1">Audience Reaction</span></div>
                 <div className="flex gap-2">
                   <button onClick={() => handleInteraction('applause', 1)} disabled={hasApplauded} className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${hasApplauded ? 'bg-neutral-800 text-neutral-600 grayscale' : 'bg-neutral-800 hover:bg-neutral-700 hover:scale-105'}`}><Icons.Applause className={`w-5 h-5 ${hasApplauded ? 'text-neutral-600' : 'text-amber-500'}`} /><span className="text-[8px] font-bold uppercase">{hasApplauded ? 'Applauded' : 'Applause'}</span></button>
-                  <button onClick={() => handleInteraction('ovation', 5)} disabled={hasOvated} className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${hasOvated ? 'bg-neutral-800 text-neutral-600 grayscale' : 'bg-red-carpet gold-glow hover:scale-105'}`}><Icons.Ovation className={`w-5 h-5 ${hasOvated ? 'text-neutral-600' : 'text-white'}`} /><span className="text-[8px] font-bold uppercase">{hasOvated ? 'Given' : 'Ovation'}</span></button>
+                  <button onClick={() => handleInteraction('ovation', 5)} disabled={hasOvated} className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all ${hasOvated ? 'bg-neutral-800 text-neutral-600 grayscale' : 'bg-red-carpet gold-glow hover:scale-105'}`}><Icons.StandingOvation className={`w-5 h-5 ${hasOvated ? 'text-neutral-600' : 'text-white'}`} /><span className="text-[8px] font-bold uppercase">{hasOvated ? 'Stood Up' : 'Standing Ovation'}</span></button>
                 </div>
               </div>
             )}

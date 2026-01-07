@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useAppContext } from '../store/AppContext';
 import { UserRole, FilmCategory, Competition, Film, User, Advertisement, DirectorInterview } from '../types';
 import { Icons } from '../constants';
@@ -8,12 +8,24 @@ import BaseModal from '../components/Modals/BaseModal';
 
 type AdminTab = 'overview' | 'films' | 'competitions' | 'ads' | 'interviews' | 'users';
 
+const getYouTubeID = (url: string) => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
+
+const getThumbnailUrl = (url: string) => {
+  const id = getYouTubeID(url);
+  if (id) return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+  return 'https://images.unsplash.com/photo-1485846234645-a62644ef7467?auto=format&fit=crop&q=80&w=1200';
+};
+
 const Admin: React.FC = () => {
   const { 
     user, films, knownUsers, competitions, advertisements, interviews, deleteFilm, updateFilm, 
     addCompetition, updateCompetition, 
     deleteCompetition, deleteUser, addAd, updateAd, deleteAd,
-    addInterview, updateInterview, deleteInterview
+    addInterview, updateInterview, deleteInterview, adminUpdateUser
   } = useAppContext();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -27,6 +39,13 @@ const Admin: React.FC = () => {
   
   const [filmFilter, setFilmFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
+
+  // Role Assignment State
+  const [assignEmail, setAssignEmail] = useState('');
+  const [assignRole, setAssignRole] = useState<UserRole>(UserRole.AUDIENCE);
+  const [assignFeedback, setAssignFeedback] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const adFileInputRef = useRef<HTMLInputElement>(null);
 
   const [compForm, setCompForm] = useState<Omit<Competition, 'id'>>({
     name: '',
@@ -45,7 +64,7 @@ const Admin: React.FC = () => {
     prize: '',
     entryFee: 0,
     imageUrl: '',
-    videoUrl: '', // New field
+    videoUrl: '', 
     targetForm: 'competition'
   });
 
@@ -77,7 +96,7 @@ const Admin: React.FC = () => {
     const now = new Date();
     return knownUsers.filter(u => {
       const lastActive = new Date(u.lastActive);
-      return (now.getTime() - lastActive.getTime()) < (30 * 60 * 1000);
+      return (now.getTime() - lastActive.getTime()) < (10 * 60 * 1000);
     });
   }, [knownUsers]);
 
@@ -120,6 +139,17 @@ const Admin: React.FC = () => {
     setIsAdModalOpen(true);
   };
 
+  const handleAdImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAdForm({ ...adForm, imageUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleOpenInterviewModal = (interview?: DirectorInterview) => {
     if (interview) {
       setEditingInterview(interview);
@@ -160,12 +190,31 @@ const Admin: React.FC = () => {
 
   const handleInterviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalInterviewData = {
+      ...interviewForm,
+      portraitUrl: getThumbnailUrl(interviewForm.videoUrl)
+    };
     if (editingInterview) {
-      updateInterview(editingInterview.id, interviewForm);
+      updateInterview(editingInterview.id, finalInterviewData);
     } else {
-      addInterview(interviewForm);
+      addInterview(finalInterviewData);
     }
     setIsInterviewModalOpen(false);
+  };
+
+  const handleAssignRoleByEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetUser = knownUsers.find(u => u.email.toLowerCase() === assignEmail.toLowerCase());
+    
+    if (targetUser) {
+      adminUpdateUser(targetUser.id, { role: assignRole });
+      setAssignFeedback({ type: 'success', message: `Successfully assigned ${assignRole} role to ${targetUser.name}.` });
+      setAssignEmail('');
+      setTimeout(() => setAssignFeedback(null), 4000);
+    } else {
+      setAssignFeedback({ type: 'error', message: 'No visionary found with that email address.' });
+      setTimeout(() => setAssignFeedback(null), 4000);
+    }
   };
 
   const filteredFilms = useMemo(() => {
@@ -208,7 +257,7 @@ const Admin: React.FC = () => {
             <NavItem id="competitions" label="Contests" icon={<Icons.Star className="w-4 h-4" />} />
             <NavItem id="ads" label="Ad Banners" icon={<Icons.Share className="w-4 h-4" />} />
             <NavItem id="interviews" label="Visionary Spotlight" icon={<Icons.Mic className="w-4 h-4" />} />
-            <NavItem id="users" label="Visionaries" icon={<Icons.Ovation className="w-4 h-4" />} />
+            <NavItem id="users" label="Visionaries" icon={<Icons.StandingOvation className="w-4 h-4" />} />
           </nav>
         </aside>
 
@@ -219,8 +268,8 @@ const Admin: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                   { label: "Total Submissions", val: films.length, sub: "Verified Works", icon: <Icons.Film className="w-5 h-5" /> },
-                  { label: "Active Presence", val: activeUsers.length, sub: "Online Now", icon: <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div> },
-                  { label: "Community Size", val: knownUsers.length, sub: "Registered Users", icon: <Icons.Ovation className="w-5 h-5" /> },
+                  { label: "Active Presence", val: activeUsers.length, sub: "Online in last 10m", icon: <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div> },
+                  { label: "Community Size", val: knownUsers.length, sub: "Registered Users", icon: <Icons.StandingOvation className="w-5 h-5" /> },
                   { label: "Active Spotlight", val: interviews.length, sub: "Visionary Interviews", icon: <Icons.Mic className="w-5 h-5 text-amber-500" /> }
                 ].map((s, i) => (
                   <div key={i} className="bg-neutral-900/40 border border-neutral-800 p-6 rounded-[2rem] shadow-xl hover:border-amber-500/20 transition-all">
@@ -350,10 +399,10 @@ const Admin: React.FC = () => {
                       )}
                       <div className="p-6 space-y-4">
                         <div className="flex justify-between items-start">
-                           <h4 className="font-bold text-white text-sm">{ad.title}</h4>
+                           <h4 className="font-bold text-white text-sm">{ad.title || 'Untitled Banner'}</h4>
                            <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${ad.isActive ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{ad.isActive ? 'Active' : 'Inactive'}</span>
                         </div>
-                        <p className="text-[10px] text-neutral-500 line-clamp-2">{ad.description}</p>
+                        <p className="text-[10px] text-neutral-500 line-clamp-2">{ad.description || 'No description provided.'}</p>
                         <div className="flex gap-2 pt-2">
                           <button onClick={() => updateAd(ad.id, { isActive: !ad.isActive })} className="flex-grow py-2 bg-neutral-800 rounded-xl text-[9px] font-bold uppercase text-amber-500 hover:bg-neutral-700 transition-colors">
                             {ad.isActive ? 'Deactivate' : 'Activate'}
@@ -400,63 +449,138 @@ const Admin: React.FC = () => {
           )}
 
           {activeTab === 'users' && (
-            <div className="space-y-8">
-              <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
-                <h3 className="text-2xl font-serif font-bold text-white">Visionary Directory</h3>
-                <div className="flex flex-wrap items-center gap-2 p-2 bg-neutral-900 rounded-full border border-neutral-800 overflow-x-auto max-w-full">
-                   {['all', 'active', 'audience', 'creator', 'judge', 'admin'].map(role => (
-                     <button 
-                       key={role} 
-                       onClick={() => setUserFilter(role)}
-                       className={`px-4 py-2 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
-                         userFilter === role ? 'bg-amber-500 text-black shadow-lg' : 'text-neutral-500 hover:text-white'
-                       }`}
-                     >
-                       {role}
-                     </button>
-                   ))}
+            <div className="space-y-10">
+              <div className="bg-neutral-900/40 border border-neutral-800 rounded-[2.5rem] p-8 shadow-2xl animate-in slide-in-from-top-4 duration-500">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                       <Icons.Mic className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-serif font-bold text-white">Assign Global Permissions</h3>
+                      <p className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">Grant special access levels by email</p>
+                    </div>
+                  </div>
                 </div>
+
+                <form onSubmit={handleAssignRoleByEmail} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                   <div className="md:col-span-2">
+                     <label className="block text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Visionary Email</label>
+                     <input 
+                       required
+                       type="email" 
+                       value={assignEmail}
+                       onChange={e => setAssignEmail(e.target.value)}
+                       placeholder="Enter user email..."
+                       className="w-full bg-black/40 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all placeholder:text-neutral-700"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-[9px] font-bold text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Assign New Role</label>
+                     <select 
+                       value={assignRole}
+                       onChange={e => setAssignRole(e.target.value as UserRole)}
+                       className="w-full bg-black/40 border border-neutral-800 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500/50 outline-none transition-all appearance-none cursor-pointer"
+                     >
+                       {Object.values(UserRole).map(role => (
+                         <option key={role} value={role}>{role}</option>
+                       ))}
+                     </select>
+                   </div>
+                   <button 
+                     type="submit"
+                     className="py-3.5 bg-amber-500 gold-glow rounded-xl text-black font-bold text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-xl"
+                   >
+                     Update Access
+                   </button>
+                </form>
+                
+                {assignFeedback && (
+                   <div className={`mt-4 p-3 rounded-xl border text-[10px] font-bold uppercase tracking-widest animate-in fade-in slide-in-from-left-2 ${assignFeedback.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
+                     {assignFeedback.message}
+                   </div>
+                )}
               </div>
-              <div className="bg-neutral-900/40 border border-neutral-800 rounded-[2rem] overflow-x-auto shadow-inner">
-                <table className="w-full text-left min-w-[850px]">
-                  <thead>
-                    <tr className="bg-black/60 border-b border-neutral-800 text-[9px] font-bold text-neutral-600 uppercase tracking-widest">
-                      <th className="px-8 py-4">Visionary Profile</th>
-                      <th className="px-6 py-4">Role</th>
-                      <th className="px-6 py-4">Identity Status</th>
-                      <th className="px-8 py-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800/40">
-                    {filteredUsers.map(u => (
-                      <tr key={u.id} className="group hover:bg-white/[0.02] transition-colors">
-                        <td className="px-8 py-4">
-                          <div className="flex items-center gap-3">
-                            <img src={u.avatarUrl} className="w-8 h-8 rounded-full border border-neutral-800" alt="" />
-                            <div>
-                               <div className="text-xs font-bold text-white">{u.name}</div>
-                               <div className="text-[9px] text-neutral-600">ID: {u.principal}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-[10px] font-bold text-amber-500/70 uppercase tracking-widest">{u.role}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                           <div className="flex items-center gap-2">
-                             <span className={`w-1.5 h-1.5 rounded-full ${activeUsers.some(active => active.id === u.id) ? 'bg-green-500 animate-pulse' : 'bg-neutral-700'}`}></span>
-                             <span className="text-[10px] text-neutral-500 font-mono">Last seen {new Date(u.lastActive).toLocaleTimeString()}</span>
-                           </div>
-                        </td>
-                        <td className="px-8 py-4 text-right">
-                          <button onClick={() => deleteUser(u.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
-                        </td>
+
+              <div className="space-y-6">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                  <h3 className="text-2xl font-serif font-bold text-white">Visionary Directory</h3>
+                  <div className="flex flex-wrap items-center gap-2 p-2 bg-neutral-900 rounded-full border border-neutral-800 overflow-x-auto max-w-full">
+                     {['all', 'active', 'audience', 'creator', 'judge', 'admin'].map(role => (
+                       <button 
+                         key={role} 
+                         onClick={() => setUserFilter(role)}
+                         className={`px-4 py-2 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${
+                           userFilter === role ? 'bg-amber-500 text-black shadow-lg' : 'text-neutral-500 hover:text-white'
+                         }`}
+                       >
+                         {role}
+                       </button>
+                     ))}
+                  </div>
+                </div>
+                
+                <div className="bg-neutral-900/40 border border-neutral-800 rounded-[2rem] overflow-x-auto shadow-inner">
+                  <table className="w-full text-left min-w-[1100px]">
+                    <thead>
+                      <tr className="bg-black/60 border-b border-neutral-800 text-[9px] font-bold text-neutral-600 uppercase tracking-widest">
+                        <th className="px-8 py-4">Visionary Profile</th>
+                        <th className="px-6 py-4">Role / Permissions</th>
+                        <th className="px-6 py-4">Contact Information</th>
+                        <th className="px-6 py-4">Identity Status</th>
+                        <th className="px-8 py-4 text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/40">
+                      {filteredUsers.map(u => (
+                        <tr key={u.id} className="group hover:bg-white/[0.02] transition-colors">
+                          <td className="px-8 py-4">
+                            <div className="flex items-center gap-3">
+                              <img src={u.avatarUrl} className="w-8 h-8 rounded-full border border-neutral-800" alt="" />
+                              <div>
+                                 <div className="text-xs font-bold text-white">{u.name}</div>
+                                 <div className="text-[8px] text-neutral-600 font-mono">ID: {u.principal}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <select 
+                              value={u.role} 
+                              onChange={(e) => adminUpdateUser(u.id, { role: e.target.value as UserRole })}
+                              className="bg-black/40 border border-neutral-800 rounded-lg px-3 py-1.5 text-[10px] font-bold text-amber-500/80 outline-none hover:border-amber-500/30 transition-all cursor-pointer"
+                            >
+                              {Object.values(UserRole).map(role => (
+                                <option key={role} value={role}>{role}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-neutral-400 font-mono">{u.email || 'N/A'}</span>
+                              <span className="text-[9px] text-neutral-600 font-mono mt-0.5">{u.phone || 'N/A'}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                             <div className="flex items-center gap-2">
+                               <span className={`w-1.5 h-1.5 rounded-full ${activeUsers.some(active => active.id === u.id) ? 'bg-green-500 animate-pulse shadow-[0_0_5px_#22c55e]' : 'bg-neutral-700'}`}></span>
+                               <span className="text-[10px] text-neutral-500 font-mono">
+                                 {activeUsers.some(active => active.id === u.id) ? 'Active Now' : `Seen ${new Date(u.lastActive).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                               </span>
+                             </div>
+                          </td>
+                          <td className="px-8 py-4 text-right">
+                            <button onClick={() => deleteUser(u.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredUsers.length === 0 && (
+                         <tr><td colSpan={5} className="py-20 text-center text-neutral-700 font-serif italic">No visionaries found matching the criteria.</td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -464,21 +588,49 @@ const Admin: React.FC = () => {
         </main>
       </div>
 
-      {/* AD MODAL */}
       <BaseModal isOpen={isAdModalOpen} onClose={() => setIsAdModalOpen(false)} title={editingAd ? "Modify Promotional Banner" : "Create New Banner"}>
         <form onSubmit={handleAdSubmit} className="space-y-5 py-2">
            <div>
               <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Banner Title</label>
-              <input required value={adForm.title} onChange={e => setAdForm({...adForm, title: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. Join the 2024 Gala" />
+              <input value={adForm.title} onChange={e => setAdForm({...adForm, title: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. Join the 2024 Gala" />
            </div>
            <div>
               <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Subtitle / Callout</label>
-              <input required value={adForm.subtitle} onChange={e => setAdForm({...adForm, subtitle: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. LIVE AUDITIONS" />
+              <input value={adForm.subtitle} onChange={e => setAdForm({...adForm, subtitle: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. LIVE AUDITIONS" />
            </div>
            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Thumbnail URL</label>
-                <input value={adForm.imageUrl || ''} onChange={e => setAdForm({...adForm, imageUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://image-url.com/poster.jpg" />
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Banner Image</label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => adFileInputRef.current?.click()}
+                      className="flex-grow py-3 bg-neutral-800 border border-neutral-700 rounded-xl text-[9px] font-bold uppercase tracking-widest text-white hover:border-amber-500/50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      {adForm.imageUrl ? 'Change Media' : 'Upload from Device'}
+                    </button>
+                    {adForm.imageUrl && (
+                      <div className="w-12 h-10 rounded-lg overflow-hidden border border-neutral-700 flex-shrink-0">
+                        <img src={adForm.imageUrl} className="w-full h-full object-cover" alt="Preview" />
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    ref={adFileInputRef} 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleAdImageUpload} 
+                    className="hidden" 
+                  />
+                  <input 
+                    value={adForm.imageUrl || ''} 
+                    onChange={e => setAdForm({...adForm, imageUrl: e.target.value})} 
+                    className="w-full bg-neutral-800/40 border border-neutral-800 rounded-lg px-3 py-1 text-[8px] text-neutral-500 outline-none focus:border-amber-500/30" 
+                    placeholder="...or provide public URL" 
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Video Background (YouTube)</label>
@@ -501,13 +653,12 @@ const Admin: React.FC = () => {
            </div>
            <div>
               <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Marketing Description</label>
-              <textarea required value={adForm.description} onChange={e => setAdForm({...adForm, description: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white h-24 outline-none focus:border-amber-500" placeholder="Elevate the festival experience..." />
+              <textarea value={adForm.description} onChange={e => setAdForm({...adForm, description: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white h-24 outline-none focus:border-amber-500" placeholder="Elevate the festival experience..." />
            </div>
            <button type="submit" className="w-full py-4 bg-red-carpet rounded-xl text-white font-bold uppercase tracking-widest text-[10px] hover:scale-105 transition-all">Save Banner Data</button>
         </form>
       </BaseModal>
 
-      {/* COMP MODAL */}
       <BaseModal isOpen={isCompModalOpen} onClose={() => setIsCompModalOpen(false)} title={editingComp ? "Update Contest Specs" : "Launch Global Contest"}>
         <form onSubmit={handleCompSubmit} className="space-y-5 py-2">
            <input required value={compForm.name} onChange={e => setCompForm({...compForm, name: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="Contest Name" />
@@ -520,7 +671,6 @@ const Admin: React.FC = () => {
         </form>
       </BaseModal>
 
-      {/* INTERVIEW MODAL */}
       <BaseModal isOpen={isInterviewModalOpen} onClose={() => setIsInterviewModalOpen(false)} title={editingInterview ? "Update Spotlight Interview" : "Add New Visionary Interview"}>
         <form onSubmit={handleInterviewSubmit} className="space-y-5 py-2">
            <div>
@@ -530,20 +680,17 @@ const Admin: React.FC = () => {
            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Expertise Tag</label>
-                <input required value={interviewForm.expertise} onChange={e => setInterviewForm({...interviewForm, expertise: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. Master of Human Narrative" />
+                <input required value={interviewForm.expertise} onChange={e => setInterviewForm({...interviewForm, expertise: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none" placeholder="e.g. Master of Human Narrative" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Associated Film</label>
-                <input required value={interviewForm.filmTitle} onChange={e => setInterviewForm({...interviewForm, filmTitle: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. Tenet" />
+                <input required value={interviewForm.filmTitle} onChange={e => setInterviewForm({...interviewForm, filmTitle: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none" placeholder="e.g. Tenet" />
               </div>
            </div>
            <div>
-              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Portrait Image URL</label>
-              <input required value={interviewForm.portraitUrl} onChange={e => setInterviewForm({...interviewForm, portraitUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://..." />
-           </div>
-           <div>
               <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">YouTube Video URL</label>
-              <input required value={interviewForm.videoUrl} onChange={e => setInterviewForm({...interviewForm, videoUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://youtube.com/..." />
+              <input required value={interviewForm.videoUrl} onChange={e => setInterviewForm({...interviewForm, videoUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none" placeholder="https://youtube.com/..." />
+              <p className="text-[8px] text-neutral-500 mt-1 ml-1 italic">Portrait will be generated automatically from the video thumbnail.</p>
            </div>
            <div>
               <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Cinematic Quote</label>

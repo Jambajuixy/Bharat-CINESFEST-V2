@@ -17,6 +17,14 @@ const isValidYT = (url: string) => {
   return match && match[2].length === 11;
 };
 
+const getThumbnailUrl = (url: string) => {
+  const match = url.match(YT_REGEX);
+  if (match && match[2].length === 11) {
+    return `https://img.youtube.com/vi/${match[2]}/maxresdefault.jpg`;
+  }
+  return 'https://images.unsplash.com/photo-1485846234645-a62644ef7467?auto=format&fit=crop&q=80&w=1200';
+};
+
 const MovieTypeToggle: React.FC<{ isAi: boolean, onChange: (val: boolean) => void }> = ({ isAi, onChange }) => (
   <div className="flex p-1 bg-neutral-800 rounded-xl border border-neutral-700">
     <button
@@ -42,7 +50,6 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
     title: '', 
     description: '', 
     youtubeUrl: '', 
-    thumbnailUrl: '', 
     isAiGenerated: false,
     genre: GENRES[0]
   });
@@ -61,6 +68,7 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
     setTimeout(() => {
       addFilm({
         ...formData,
+        thumbnailUrl: getThumbnailUrl(formData.youtubeUrl),
         creatorId: user?.id || 'anonymous',
         category: FilmCategory.SELECTION
       });
@@ -108,26 +116,21 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
         <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none h-20 transition-colors resize-none" placeholder="Tell us about your masterpiece..." />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-1">YouTube Link</label>
-          <input 
-            required 
-            type="url" 
-            value={formData.youtubeUrl} 
-            onChange={e => {
-              setFormData({...formData, youtubeUrl: e.target.value});
-              setYtError(false);
-            }} 
-            className={`w-full bg-neutral-800 border rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors ${ytError ? 'border-red-500' : 'border-neutral-700'}`} 
-            placeholder="https://youtube.com/..." 
-          />
-          {ytError && <p className="text-[8px] text-red-500 mt-1 ml-1 font-bold uppercase tracking-widest">Invalid YouTube URL</p>}
-        </div>
-        <div>
-          <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-1">Thumbnail URL</label>
-          <input required type="url" value={formData.thumbnailUrl} onChange={e => setFormData({...formData, thumbnailUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors" placeholder="https://image.jpg" />
-        </div>
+      <div>
+        <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-1">YouTube Link</label>
+        <input 
+          required 
+          type="url" 
+          value={formData.youtubeUrl} 
+          onChange={e => {
+            setFormData({...formData, youtubeUrl: e.target.value});
+            setYtError(false);
+          }} 
+          className={`w-full bg-neutral-800 border rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none transition-colors ${ytError ? 'border-red-500' : 'border-neutral-700'}`} 
+          placeholder="https://youtube.com/..." 
+        />
+        {ytError && <p className="text-[8px] text-red-500 mt-1 ml-1 font-bold uppercase tracking-widest">Invalid YouTube URL</p>}
+        <p className="text-[8px] text-neutral-500 mt-1.5 ml-1 italic">Thumbnail will be generated automatically from the video.</p>
       </div>
 
       <TermsSection onAgree={setAgreed} />
@@ -144,13 +147,13 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
 
 export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
   const { user, films, competitions, addFilm } = useAppContext();
-  const [selectedComp, setSelectedComp] = useState(competitions[0]?.id || '');
+  // Always focus on the first (most relevant/featured) competition
+  const featuredComp = competitions[0];
   const [selectedFilmId, setSelectedFilmId] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     youtubeUrl: '',
-    thumbnailUrl: '',
     isAiGenerated: false,
     genre: GENRES[0]
   });
@@ -166,12 +169,6 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
   }, [films, user, formData.isAiGenerated, selectedGenreFilter]);
 
   useEffect(() => {
-    if (competitions.length > 0 && !selectedComp) {
-      setSelectedComp(competitions[0].id);
-    }
-  }, [competitions]);
-
-  useEffect(() => {
     if (selectedFilmId) {
       const film = films.find(f => f.id === selectedFilmId);
       if (film) {
@@ -179,7 +176,6 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
           title: film.title,
           description: film.description,
           youtubeUrl: film.youtubeUrl,
-          thumbnailUrl: film.thumbnailUrl,
           isAiGenerated: film.isAiGenerated || false,
           genre: film.genre
         });
@@ -190,7 +186,7 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreed) return;
+    if (!agreed || !featuredComp) return;
     if (!isValidYT(formData.youtubeUrl)) {
       setYtError(true);
       return;
@@ -199,6 +195,7 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
     setTimeout(() => {
       addFilm({
         ...formData,
+        thumbnailUrl: getThumbnailUrl(formData.youtubeUrl),
         creatorId: user?.id || 'anonymous',
         category: FilmCategory.CONTEST,
         isContestActive: true
@@ -207,7 +204,7 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
     }, 2000);
   };
 
-  const currentComp = competitions.find(c => c.id === selectedComp);
+  if (!featuredComp) return <div className="text-center py-12 text-neutral-500">No active competitions found.</div>;
 
   if (paying) return (
     <div className="text-center py-12">
@@ -218,6 +215,27 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Featured Competition Highlight */}
+      <div className="p-5 bg-red-carpet/10 border border-amber-500/20 rounded-2xl relative overflow-hidden group">
+         <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 blur-2xl group-hover:bg-amber-500/10 transition-colors"></div>
+         <div className="flex justify-between items-start mb-2">
+            <span className="text-[8px] font-bold text-amber-500 uppercase tracking-[0.3em]">Featured Competition</span>
+            <span className="px-2 py-0.5 bg-amber-500 text-black text-[7px] font-bold rounded uppercase">Active</span>
+         </div>
+         <h3 className="text-lg font-serif font-bold text-white mb-1">{featuredComp.name}</h3>
+         <p className="text-[10px] text-neutral-400 leading-relaxed italic mb-3">"{featuredComp.description}"</p>
+         <div className="flex justify-between items-center py-2 border-t border-white/5">
+            <div className="flex flex-col">
+               <span className="text-[7px] text-neutral-500 font-bold uppercase tracking-tighter">Reward Pool</span>
+               <span className="text-xs font-bold text-amber-400">{featuredComp.prize}</span>
+            </div>
+            <div className="flex flex-col items-end">
+               <span className="text-[7px] text-neutral-500 font-bold uppercase tracking-tighter">Entry Fee</span>
+               <span className="text-xs font-bold text-white">₹{featuredComp.entryFee}</span>
+            </div>
+         </div>
+      </div>
+
       <div className="space-y-4 p-4 bg-black/40 border border-neutral-800 rounded-2xl">
         <div className="flex justify-between items-center mb-1">
           <label className="block text-[9px] font-bold text-amber-500 uppercase tracking-widest ml-1">Quick Select From Library (Optional)</label>
@@ -286,6 +304,7 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
             placeholder="https://youtube.com/watch?v=..." 
           />
           {ytError && <p className="text-[8px] text-red-500 mt-1 ml-1 font-bold uppercase tracking-widest">Invalid YouTube URL</p>}
+          <p className="text-[8px] text-neutral-500 mt-1.5 ml-1 italic">Thumbnail will be generated automatically from the video.</p>
         </div>
 
         <div>
@@ -293,35 +312,15 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
           <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-xs text-white focus:border-amber-500 outline-none h-20 transition-colors resize-none" placeholder="Provide details for the jury..." />
         </div>
       </div>
-
-      <div>
-        <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-2 ml-1">Choose Competition</label>
-        <div className="grid gap-2">
-          {competitions.map(comp => (
-            <div 
-              key={comp.id}
-              onClick={() => setSelectedComp(comp.id)}
-              className={`p-3 border rounded-xl cursor-pointer transition-all ${selectedComp === comp.id ? 'border-amber-500 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.1)]' : 'border-neutral-800 bg-neutral-900/50 hover:border-neutral-700'}`}
-            >
-              <div className="flex justify-between items-center font-bold">
-                <span className={`text-xs ${selectedComp === comp.id ? 'text-amber-400' : 'text-neutral-300'}`}>{comp.name}</span>
-                <span className="text-amber-400 text-xs">₹{comp.entryFee}</span>
-              </div>
-              <p className="text-[9px] text-neutral-500 mt-0.5">{comp.description}</p>
-              <div className="text-[9px] text-amber-500/60 mt-1 font-bold uppercase tracking-tight">Reward: {comp.prize}</div>
-            </div>
-          ))}
-        </div>
-      </div>
       
       <TermsSection onAgree={setAgreed} />
       
       <button 
         type="submit"
-        disabled={!agreed || !selectedComp}
-        className={`w-full py-4 rounded-full font-bold uppercase tracking-widest transition-all ${agreed && selectedComp ? 'bg-red-carpet gold-glow hover:scale-[1.02] text-white shadow-xl' : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'}`}
+        disabled={!agreed}
+        className={`w-full py-4 rounded-full font-bold uppercase tracking-widest transition-all ${agreed ? 'bg-red-carpet gold-glow hover:scale-[1.02] text-white shadow-xl' : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'}`}
       >
-        Pay Entry Fee (₹{currentComp?.entryFee || 0}) & Enter
+        Pay Entry Fee (₹{featuredComp.entryFee}) & Enter
       </button>
     </form>
   );
@@ -334,7 +333,6 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
     title: '',
     description: '',
     youtubeUrl: '',
-    thumbnailUrl: '',
     isAiGenerated: false,
     genre: GENRES[0]
   });
@@ -358,7 +356,6 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
           title: film.title,
           description: film.description,
           youtubeUrl: film.youtubeUrl,
-          thumbnailUrl: film.thumbnailUrl,
           isAiGenerated: film.isAiGenerated || false,
           genre: film.genre
         });
@@ -378,6 +375,7 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
     setTimeout(() => {
       addFilm({
         ...formData,
+        thumbnailUrl: getThumbnailUrl(formData.youtubeUrl),
         creatorId: user?.id || 'anonymous',
         category: FilmCategory.PREMIERE
       });
@@ -462,6 +460,7 @@ export const PremiereSchedulingForm: React.FC<FormProps> = ({ onSuccess }) => {
             placeholder="https://youtube.com/..." 
           />
           {ytError && <p className="text-[8px] text-red-500 mt-1 ml-1 font-bold uppercase tracking-widest">Invalid YouTube URL</p>}
+          <p className="text-[8px] text-neutral-500 mt-1.5 ml-1 italic">Thumbnail will be generated automatically from the video.</p>
         </div>
 
         <div>

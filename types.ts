@@ -26,8 +26,11 @@ export interface User {
   bio: string;
   role: UserRole;
   gender?: string;
+  email: string; // Mandatory contact record
+  phone: string; // Mandatory contact record
   principal: string; // Simulated Internet Identity principal
   avatarUrl?: string;
+  website?: string; // Portfolio link
   lastActive: string; // ISO String for activity tracking
   joinedAt: string;
 }
