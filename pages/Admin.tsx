@@ -39,6 +39,7 @@ const Admin: React.FC = () => {
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
   const [isInterviewModalOpen, setIsInterviewModalOpen] = useState(false);
   const [isJudgeModalOpen, setIsJudgeModalOpen] = useState(false);
+  const [isAssignRoleModalOpen, setIsAssignRoleModalOpen] = useState(false);
   
   const [filmFilter, setFilmFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
@@ -63,6 +64,11 @@ const Admin: React.FC = () => {
     bio: '',
     website: '',
     gender: 'Prefer not to say'
+  });
+
+  const [assignRoleForm, setAssignRoleForm] = useState({
+    email: '',
+    role: UserRole.AUDIENCE
   });
 
   const [adForm, setAdForm] = useState<Omit<Advertisement, 'id'>>({
@@ -190,6 +196,28 @@ const Admin: React.FC = () => {
       });
     }
     setIsJudgeModalOpen(false);
+  };
+
+  const handleAssignRoleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const existingUser = knownUsers.find(u => u.email.toLowerCase() === assignRoleForm.email.toLowerCase());
+    
+    if (existingUser) {
+      adminUpdateUser(existingUser.id, { role: assignRoleForm.role });
+    } else {
+      // Create a provisioned user
+      register({
+        name: assignRoleForm.email.split('@')[0],
+        bio: 'Role provisioned by Administrator.',
+        role: assignRoleForm.role,
+        gender: 'Prefer not to say',
+        email: assignRoleForm.email,
+        phone: '',
+        identifier: assignRoleForm.email.toLowerCase()
+      });
+    }
+    setIsAssignRoleModalOpen(false);
+    setAssignRoleForm({ email: '', role: UserRole.AUDIENCE });
   };
 
   const handleOpenAdModal = (ad?: Advertisement) => {
@@ -591,7 +619,20 @@ const Admin: React.FC = () => {
           {activeTab === 'users' && (
             <div className="space-y-10">
               <div className="bg-neutral-900/40 border border-neutral-800 rounded-[2.5rem] p-8 shadow-2xl">
-                 <h3 className="text-2xl font-serif font-bold text-white mb-6">Audience Management</h3>
+                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8">
+                    <div>
+                      <h3 className="text-2xl font-serif font-bold text-white">Audience Management</h3>
+                      <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mt-1">Manage visionaries and assign administrative roles.</p>
+                    </div>
+                    <button 
+                      onClick={() => setIsAssignRoleModalOpen(true)} 
+                      className="px-6 py-3 bg-amber-500 gold-glow rounded-xl text-black font-bold text-[10px] uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>
+                      Assign Role by Email
+                    </button>
+                 </div>
+
                  <div className="flex flex-wrap items-center gap-2 p-2 bg-neutral-900 rounded-full border border-neutral-800 mb-8 overflow-x-auto">
                      {['all', 'active', 'audience', 'creator', 'judge', 'admin'].map(role => (
                        <button key={role} onClick={() => setUserFilter(role)} className={`px-4 py-2 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all ${userFilter === role ? 'bg-amber-500 text-black shadow-lg' : 'text-neutral-500 hover:text-white'}`}>{role}</button>
@@ -629,6 +670,46 @@ const Admin: React.FC = () => {
           )}
         </main>
       </div>
+
+      <BaseModal isOpen={isAssignRoleModalOpen} onClose={() => setIsAssignRoleModalOpen(false)} title="Assign Visionary Role">
+        <form onSubmit={handleAssignRoleSubmit} className="space-y-6 py-2">
+           <div className="bg-amber-500/5 border border-amber-500/10 p-4 rounded-xl mb-4">
+             <p className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Administrative Override</p>
+             <p className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+               Type an email address to promote an existing visionary or pre-assign a role to a new email.
+             </p>
+           </div>
+           
+           <div>
+              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Visionary Email</label>
+              <input 
+                required 
+                type="email"
+                value={assignRoleForm.email} 
+                onChange={e => setAssignRoleForm({...assignRoleForm, email: e.target.value})} 
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" 
+                placeholder="curator@bharatcinefest.com" 
+              />
+           </div>
+
+           <div>
+              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Assigned Role</label>
+              <select 
+                value={assignRoleForm.role} 
+                onChange={e => setAssignRoleForm({...assignRoleForm, role: e.target.value as UserRole})} 
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500 cursor-pointer"
+              >
+                {Object.values(UserRole).map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+           </div>
+           
+           <button type="submit" className="w-full py-4 bg-red-carpet gold-glow rounded-xl text-white font-bold uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all">
+             Commit Role Assignment
+           </button>
+        </form>
+      </BaseModal>
 
       <BaseModal isOpen={isJudgeModalOpen} onClose={() => setIsJudgeModalOpen(false)} title={editingJudge ? "Update Registry Credentials" : "Enroll Jury Member"}>
         <form onSubmit={handleJudgeSubmit} className="space-y-5 py-2">
@@ -777,7 +858,6 @@ const Admin: React.FC = () => {
            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Navigation Target</label>
-                {/* FIX: Use adForm instead of targetForm which was undefined */}
                 <select value={adForm.targetForm} onChange={e => setAdForm({...adForm, targetForm: e.target.value as any})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500">
                     <option value="competition">Competition Chamber</option>
                     <option value="premiere">Premiere Booking</option>
