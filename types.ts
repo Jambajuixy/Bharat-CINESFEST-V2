@@ -71,6 +71,7 @@ export interface Competition {
   prize: string;
   entryFee: number;
   endsAt: string;
+  imageUrl?: string; // Added image support for competitions
 }
 
 export interface Advertisement {
