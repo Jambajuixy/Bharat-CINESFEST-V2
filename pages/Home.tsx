@@ -8,6 +8,8 @@ import { Film, FilmCategory, User } from '../types';
 import VideoPlayerModal from '../components/Modals/VideoPlayerModal';
 import StarRating from '../components/StarRating';
 
+const GENRES = ['All Genres', 'Drama', 'Sci-Fi', 'Noir', 'Documentary', 'Action', 'Horror', 'Animation', 'Abstract', 'Experimental'];
+
 const FilmCard: React.FC<{ film: Film; onPlay: (film: Film) => void }> = ({ film, onPlay }) => {
   const { submitVote, user, login, votedFilmIds } = useAppContext();
   const [showShareToast, setShowShareToast] = useState(false);
@@ -127,12 +129,14 @@ const Home: React.FC = () => {
   const [activeHall, setActiveHall] = useState<'human' | 'ai'>('human');
   const [activeCategory, setActiveCategory] = useState<'all' | 'gallery' | 'premieres' | 'contests'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'latest' | 'score' | 'popularity'>('latest');
+  const [genreFilter, setGenreFilter] = useState('All Genres');
   const [playingFilm, setPlayingFilm] = useState<Film | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     setIsExpanded(false);
-  }, [activeHall, activeCategory, searchQuery]);
+  }, [activeHall, activeCategory, searchQuery, sortBy, genreFilter]);
 
   const featuredComp = competitions[0];
   const activeJury = useMemo(() => {
@@ -148,13 +152,22 @@ const Home: React.FC = () => {
       list = list.filter(f => f.category === mapping[activeCategory as keyof typeof mapping]);
     }
 
+    if (genreFilter !== 'All Genres') {
+      list = list.filter(f => f.genre === genreFilter);
+    }
+
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(f => f.title.toLowerCase().includes(q) || f.description.toLowerCase().includes(q) || f.genre.toLowerCase().includes(q));
     }
 
-    return list.sort((a, b) => b.uploadDate.localeCompare(a.uploadDate));
-  }, [films, activeHall, activeCategory, searchQuery]);
+    // Apply Sorting
+    return [...list].sort((a, b) => {
+      if (sortBy === 'score') return (b.score || 0) - (a.score || 0);
+      if (sortBy === 'popularity') return (b.votes || 0) - (a.votes || 0);
+      return b.uploadDate.localeCompare(a.uploadDate); // Default to Latest
+    });
+  }, [films, activeHall, activeCategory, searchQuery, sortBy, genreFilter]);
 
   const displayedFilms = isExpanded ? filteredFilms : filteredFilms.slice(0, 6);
 
@@ -167,7 +180,7 @@ const Home: React.FC = () => {
       <Hero activeHall={activeHall} onHallSwitch={setActiveHall} />
       <FeaturedDirectors onPlayInterview={setPlayingFilm} />
 
-      <div id="library-content" className="sticky top-14 z-30 w-full px-6 py-6 flex flex-col items-center gap-5 bg-black/80 backdrop-blur-xl border-b border-white/5">
+      <div id="library-content" className="sticky top-14 z-30 w-full px-6 py-4 flex flex-col items-center gap-4 bg-black/80 backdrop-blur-xl border-b border-white/5">
         <div className="flex flex-wrap items-center justify-center gap-3 p-1.5 bg-neutral-900/60 border border-neutral-800 rounded-full shadow-2xl">
           {(['all', 'gallery', 'premieres', 'contests'] as const).map((cat) => (
             <button 
@@ -182,8 +195,9 @@ const Home: React.FC = () => {
           ))}
         </div>
 
-        <div className="flex items-center gap-4 w-full max-w-2xl px-4">
-           <div className="relative flex-grow">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full max-w-4xl px-4">
+           {/* Search Input */}
+           <div className="relative flex-grow w-full">
              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-neutral-600">
                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
              </div>
@@ -194,6 +208,37 @@ const Home: React.FC = () => {
                onChange={e => setSearchQuery(e.target.value)}
                className="w-full bg-neutral-900 border border-neutral-800 rounded-full pl-12 pr-6 py-3 text-xs text-white focus:border-amber-500/50 outline-none transition-all placeholder:text-neutral-700"
              />
+           </div>
+
+           {/* Refine Controls */}
+           <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-40 group">
+                <select 
+                  value={genreFilter}
+                  onChange={e => setGenreFilter(e.target.value)}
+                  className="w-full appearance-none bg-neutral-900 border border-neutral-800 rounded-full px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-amber-500/80 outline-none focus:border-amber-500 cursor-pointer"
+                >
+                  {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-neutral-600">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
+
+              <div className="relative flex-1 md:w-48 group">
+                <select 
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value as any)}
+                  className="w-full appearance-none bg-neutral-900 border border-neutral-800 rounded-full px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-white outline-none focus:border-amber-500 cursor-pointer"
+                >
+                  <option value="latest">Latest Arrivals</option>
+                  <option value="score">Artistic Score</option>
+                  <option value="popularity">Festival Buzz</option>
+                </select>
+                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-neutral-600">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7"/></svg>
+                </div>
+              </div>
            </div>
         </div>
       </div>
