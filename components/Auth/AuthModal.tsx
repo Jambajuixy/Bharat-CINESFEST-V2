@@ -161,7 +161,7 @@ const AuthModal: React.FC = () => {
              <p className="text-neutral-400 text-xs mb-6">
                {activeMethod === 'email' 
                  ? "Connect your existing gala profile or create a new one via email." 
-                 : "Receive an invitation code via SMS to confirm your identity."}
+                 : "Enter digits only. Invitation code will be dispatched to this number."}
              </p>
 
              <form onSubmit={handleInputSubmit} className="space-y-4">
@@ -177,9 +177,14 @@ const AuthModal: React.FC = () => {
                    required
                    autoFocus
                    type={activeMethod === 'email' ? 'email' : 'tel'} 
+                   inputMode={activeMethod === 'phone' ? 'numeric' : 'email'}
+                   pattern={activeMethod === 'phone' ? '[0-9]*' : undefined}
                    value={inputValue}
-                   onChange={e => setInputValue(e.target.value)}
-                   placeholder={activeMethod === 'email' ? 'director@studio.com' : '99999 01234'}
+                   onChange={e => {
+                     const val = e.target.value;
+                     setInputValue(activeMethod === 'phone' ? val.replace(/\D/g, '') : val);
+                   }}
+                   placeholder={activeMethod === 'email' ? 'director@studio.com' : '9999901234'}
                    className="w-full bg-neutral-800 border border-neutral-700 rounded-xl pl-12 pr-4 py-3.5 text-sm text-white focus:border-amber-500 outline-none transition-all placeholder:text-neutral-600"
                  />
                </div>
@@ -238,8 +243,17 @@ const AuthModal: React.FC = () => {
                 <input required type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="alex@cinema.com" className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none transition-all" />
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Phone Number</label>
-                <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="+91 99999 00000" className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none transition-all" />
+                <label className="block text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Phone Number (Digits Only)</label>
+                <input 
+                  required 
+                  type="tel" 
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={formData.phone} 
+                  onChange={e => setFormData({...formData, phone: e.target.value.replace(/\D/g, '')})} 
+                  placeholder="9999900000" 
+                  className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white focus:border-amber-500 outline-none transition-all" 
+                />
               </div>
             </div>
 

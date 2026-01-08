@@ -452,7 +452,7 @@ const Admin: React.FC = () => {
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-neutral-900 pb-8 gap-4">
                   <div>
                     <h3 className="text-3xl font-serif font-bold gold-text">Carousel Management</h3>
-                    <p className="text-[10px] text-neutral-600 font-bold uppercase tracking-widest mt-1">Manage exactly 3 horizontal sliding banners for the homepage</p>
+                    <p className="text-[10px] text-neutral-600 font-bold uppercase tracking-widest mt-1">Manage horizontal sliding banners for the homepage</p>
                   </div>
                   <button onClick={() => handleOpenAdModal()} className="w-full sm:w-auto px-8 py-3 bg-red-carpet gold-glow rounded-xl text-white font-bold text-[10px] uppercase tracking-widest">Add New Slot</button>
                </div>
@@ -657,6 +657,21 @@ const Admin: React.FC = () => {
               <input value={judgeForm.website} onChange={e => setJudgeForm({...judgeForm, website: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://..." />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Phone Number (Digits Only)</label>
+              <input 
+                required 
+                type="tel" 
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={judgeForm.phone} 
+                onChange={e => setJudgeForm({...judgeForm, phone: e.target.value.replace(/\D/g, '')})} 
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" 
+                placeholder="9999900000" 
+              />
+            </div>
+          </div>
           <div>
             <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Expert Biography</label>
             <textarea required value={judgeForm.bio} onChange={e => setJudgeForm({...judgeForm, bio: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white h-32 outline-none focus:border-amber-500 resize-none" placeholder="Experience in documentary, awards won, cinematic focus..." />
@@ -762,6 +777,7 @@ const Admin: React.FC = () => {
            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Navigation Target</label>
+                {/* FIX: Use adForm instead of targetForm which was undefined */}
                 <select value={adForm.targetForm} onChange={e => setAdForm({...adForm, targetForm: e.target.value as any})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500">
                     <option value="competition">Competition Chamber</option>
                     <option value="premiere">Premiere Booking</option>
