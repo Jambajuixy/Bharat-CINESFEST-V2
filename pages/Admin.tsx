@@ -255,7 +255,7 @@ const Admin: React.FC = () => {
             <NavItem id="overview" label="Overview" icon={<Icons.Trophy className="w-4 h-4" />} />
             <NavItem id="films" label="Cinema Library" icon={<Icons.Film className="w-4 h-4" />} />
             <NavItem id="competitions" label="Contests" icon={<Icons.Star className="w-4 h-4" />} />
-            <NavItem id="ads" label="Ad Banners" icon={<Icons.Share className="w-4 h-4" />} />
+            <NavItem id="ads" label="Homepage Banners" icon={<Icons.Share className="w-4 h-4" />} />
             <NavItem id="interviews" label="Visionary Spotlight" icon={<Icons.Mic className="w-4 h-4" />} />
             <NavItem id="users" label="Visionaries" icon={<Icons.StandingOvation className="w-4 h-4" />} />
           </nav>
@@ -380,39 +380,59 @@ const Admin: React.FC = () => {
           )}
 
           {activeTab === 'ads' && (
-            <div className="space-y-8">
+            <div className="space-y-12">
                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-neutral-900 pb-8 gap-4">
-                  <h3 className="text-3xl font-serif font-bold gold-text">Promotional Banners</h3>
-                  <button onClick={() => handleOpenAdModal()} className="w-full sm:w-auto px-8 py-3 bg-red-carpet gold-glow rounded-xl text-white font-bold text-[10px] uppercase tracking-widest">Add New Banner</button>
+                  <div>
+                    <h3 className="text-3xl font-serif font-bold gold-text">Carousel Management</h3>
+                    <p className="text-[10px] text-neutral-600 font-bold uppercase tracking-widest mt-1">Manage exactly 3 horizontal sliding banners for the homepage</p>
+                  </div>
+                  <button onClick={() => handleOpenAdModal()} className="w-full sm:w-auto px-8 py-3 bg-red-carpet gold-glow rounded-xl text-white font-bold text-[10px] uppercase tracking-widest">Add New Slot</button>
                </div>
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {advertisements.map(ad => (
-                    <div key={ad.id} className={`bg-neutral-900/60 border rounded-3xl overflow-hidden group transition-all shadow-xl ${ad.isActive ? 'border-amber-500/30' : 'border-neutral-800 opacity-60'}`}>
-                      {ad.imageUrl && (
-                        <div className="h-28 overflow-hidden relative">
-                          <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                 {advertisements.map((ad, idx) => (
+                    <div key={ad.id} className={`bg-neutral-900/60 border rounded-[2.5rem] overflow-hidden group transition-all shadow-2xl relative ${ad.isActive ? 'border-amber-500/30 ring-1 ring-amber-500/10' : 'border-neutral-800 opacity-60'}`}>
+                      <div className="absolute top-4 left-4 z-20">
+                         <div className="px-3 py-1 bg-black/60 backdrop-blur-md border border-white/10 rounded-full text-[8px] font-bold text-white uppercase tracking-widest">Slot #{idx + 1}</div>
+                      </div>
+                      {ad.imageUrl || ad.videoUrl ? (
+                        <div className="h-40 overflow-hidden relative">
+                          <img src={ad.imageUrl || getThumbnailUrl(ad.videoUrl || '')} alt={ad.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
                           {ad.videoUrl && (
-                            <div className="absolute top-2 right-2 bg-amber-500 text-black text-[7px] font-bold px-1.5 py-0.5 rounded-full uppercase">Video BG</div>
+                            <div className="absolute bottom-3 right-3 bg-amber-500 text-black text-[7px] font-bold px-2 py-0.5 rounded-full uppercase">Video Loop</div>
                           )}
                         </div>
-                      )}
-                      <div className="p-6 space-y-4">
-                        <div className="flex justify-between items-start">
-                           <h4 className="font-bold text-white text-sm">{ad.title || 'Untitled Banner'}</h4>
-                           <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${ad.isActive ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{ad.isActive ? 'Active' : 'Inactive'}</span>
+                      ) : (
+                        <div className="h-40 bg-neutral-800 flex items-center justify-center">
+                          <Icons.Share className="w-8 h-8 text-neutral-700" />
                         </div>
-                        <p className="text-[10px] text-neutral-500 line-clamp-2">{ad.description || 'No description provided.'}</p>
-                        <div className="flex gap-2 pt-2">
-                          <button onClick={() => updateAd(ad.id, { isActive: !ad.isActive })} className="flex-grow py-2 bg-neutral-800 rounded-xl text-[9px] font-bold uppercase text-amber-500 hover:bg-neutral-700 transition-colors">
-                            {ad.isActive ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button onClick={() => handleOpenAdModal(ad)} className="p-2 bg-neutral-800 rounded-xl text-neutral-400">Edit</button>
-                          <button onClick={() => deleteAd(ad.id)} className="p-2 bg-red-900/10 text-red-500 rounded-xl">Del</button>
+                      )}
+                      <div className="p-8 space-y-5">
+                        <div className="flex justify-between items-start gap-4">
+                           <h4 className="font-serif font-bold text-white text-lg leading-tight line-clamp-2">{ad.title || 'Untitled Banner'}</h4>
+                           <span className={`text-[8px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter shrink-0 ${ad.isActive ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>{ad.isActive ? 'Live' : 'Hidden'}</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-500 line-clamp-3 italic leading-relaxed">"{ad.description || 'No marketing description provided.'}"</p>
+                        <div className="pt-2 flex flex-col gap-2">
+                          <div className="flex gap-2">
+                             <button onClick={() => handleOpenAdModal(ad)} className="flex-1 py-3 bg-amber-500 text-black rounded-2xl text-[9px] font-bold uppercase tracking-widest hover:scale-[1.02] transition-all">Edit Content</button>
+                             <button onClick={() => updateAd(ad.id, { isActive: !ad.isActive })} className="p-3 bg-neutral-800 border border-neutral-700 rounded-2xl text-neutral-400 hover:text-white transition-colors">
+                                {ad.isActive ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg> : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
+                             </button>
+                          </div>
+                          <button onClick={() => deleteAd(ad.id)} className="py-2 text-[8px] font-bold uppercase tracking-[0.3em] text-red-500/50 hover:text-red-500 transition-colors">Remove Slot</button>
                         </div>
                       </div>
                     </div>
                  ))}
+                 {advertisements.length < 3 && (
+                   <button onClick={() => handleOpenAdModal()} className="border-2 border-dashed border-neutral-800 rounded-[2.5rem] h-full flex flex-col items-center justify-center p-8 text-neutral-700 hover:text-amber-500/50 hover:border-amber-500/20 transition-all group">
+                      <div className="w-12 h-12 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Assign Slot #{advertisements.length + 1}</span>
+                   </button>
+                 )}
                </div>
             </div>
           )}
@@ -588,19 +608,19 @@ const Admin: React.FC = () => {
         </main>
       </div>
 
-      <BaseModal isOpen={isAdModalOpen} onClose={() => setIsAdModalOpen(false)} title={editingAd ? "Modify Promotional Banner" : "Create New Banner"}>
+      <BaseModal isOpen={isAdModalOpen} onClose={() => setIsAdModalOpen(false)} title={editingAd ? "Modify Carousel Slot" : "Provision New Banner Slot"}>
         <form onSubmit={handleAdSubmit} className="space-y-5 py-2">
            <div>
-              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Banner Title</label>
+              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Main Heading (Hero Text)</label>
               <input value={adForm.title} onChange={e => setAdForm({...adForm, title: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. Join the 2024 Gala" />
            </div>
            <div>
-              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Subtitle / Callout</label>
+              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Context / Badge Label</label>
               <input value={adForm.subtitle} onChange={e => setAdForm({...adForm, subtitle: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. LIVE AUDITIONS" />
            </div>
            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Banner Image</label>
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Visual Asset (Image)</label>
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
                     <button 
@@ -609,7 +629,7 @@ const Admin: React.FC = () => {
                       className="flex-grow py-3 bg-neutral-800 border border-neutral-700 rounded-xl text-[9px] font-bold uppercase tracking-widest text-white hover:border-amber-500/50 transition-all flex items-center justify-center gap-2"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      {adForm.imageUrl ? 'Change Media' : 'Upload from Device'}
+                      {adForm.imageUrl ? 'Change Asset' : 'Upload File'}
                     </button>
                     {adForm.imageUrl && (
                       <div className="w-12 h-10 rounded-lg overflow-hidden border border-neutral-700 flex-shrink-0">
@@ -624,38 +644,32 @@ const Admin: React.FC = () => {
                     onChange={handleAdImageUpload} 
                     className="hidden" 
                   />
-                  <input 
-                    value={adForm.imageUrl || ''} 
-                    onChange={e => setAdForm({...adForm, imageUrl: e.target.value})} 
-                    className="w-full bg-neutral-800/40 border border-neutral-800 rounded-lg px-3 py-1 text-[8px] text-neutral-500 outline-none focus:border-amber-500/30" 
-                    placeholder="...or provide public URL" 
-                  />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Video Background (YouTube)</label>
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Background Atmosphere (YT Link)</label>
                 <input value={adForm.videoUrl || ''} onChange={e => setAdForm({...adForm, videoUrl: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="https://youtube.com/..." />
               </div>
            </div>
            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Destination</label>
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Navigation Target</label>
                 <select value={adForm.targetForm} onChange={e => setAdForm({...adForm, targetForm: e.target.value as any})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500">
-                    <option value="competition">Competition Hall</option>
+                    <option value="competition">Competition Chamber</option>
                     <option value="premiere">Premiere Booking</option>
-                    <option value="festival">Movie Trailer / Selection</option>
+                    <option value="festival">Main Gallery Submission</option>
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Action Button</label>
-                <input value={adForm.actionText} onChange={e => setAdForm({...adForm, actionText: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. Sign Up" />
+                <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">CTA Text (Button)</label>
+                <input value={adForm.actionText} onChange={e => setAdForm({...adForm, actionText: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-amber-500" placeholder="e.g. Join the Arena" />
               </div>
            </div>
            <div>
-              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Marketing Description</label>
-              <textarea value={adForm.description} onChange={e => setAdForm({...adForm, description: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white h-24 outline-none focus:border-amber-500" placeholder="Elevate the festival experience..." />
+              <label className="block text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1.5 ml-1">Marketing Subtext</label>
+              <textarea value={adForm.description} onChange={e => setAdForm({...adForm, description: e.target.value})} className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white h-24 outline-none focus:border-amber-500 resize-none" placeholder="Provide context for the visionary audience..." />
            </div>
-           <button type="submit" className="w-full py-4 bg-red-carpet rounded-xl text-white font-bold uppercase tracking-widest text-[10px] hover:scale-105 transition-all">Save Banner Data</button>
+           <button type="submit" className="w-full py-4 bg-red-carpet rounded-xl text-white font-bold uppercase tracking-widest text-[10px] hover:scale-[1.02] transition-all gold-glow">Commit Changes to Carousel</button>
         </form>
       </BaseModal>
 

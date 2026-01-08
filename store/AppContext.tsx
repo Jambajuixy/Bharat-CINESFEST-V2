@@ -44,14 +44,14 @@ interface AppState {
 const AppContext = createContext<AppState | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  USERS: 'cinefest_users_metadata_v3',
-  SESSION: 'cinefest_session_id_v3',
-  FILMS: 'cinefest_films_metadata_v3',
-  VOTES: 'cinefest_user_reactions_v3',
-  RATINGS: 'cinefest_user_star_ratings_v3',
-  COMPS: 'cinefest_competitions_v3',
-  ADS: 'cinefest_ads_v3',
-  INTERVIEWS: 'cinefest_interviews_v3',
+  USERS: 'cinefest_users_metadata_v4',
+  SESSION: 'cinefest_session_id_v4',
+  FILMS: 'cinefest_films_metadata_v4',
+  VOTES: 'cinefest_user_reactions_v4',
+  RATINGS: 'cinefest_user_star_ratings_v4',
+  COMPS: 'cinefest_competitions_v4',
+  ADS: 'cinefest_ads_v4',
+  INTERVIEWS: 'cinefest_interviews_v4',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -100,7 +100,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const activeUser = initialUsers.find((u: User) => u.id === sessionId);
       if (activeUser) {
         setUser(activeUser);
-        // Refresh timestamp on session resume
         const now = new Date().toISOString();
         setKnownUsers(all => all.map(u => u.id === activeUser.id ? { ...u, lastActive: now } : u));
       }
@@ -113,7 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setInterviews(hydrate(STORAGE_KEYS.INTERVIEWS, INITIAL_INTERVIEWS));
     setAdvertisements(hydrate(STORAGE_KEYS.ADS, [
       {
-        id: 'ad-contest',
+        id: 'ad-1',
         title: 'Global Indie Gems',
         subtitle: 'CASH PRIZE REVEALED',
         description: 'Compete for the ultimate ₹1,00,000 prize pool and global recognition.',
@@ -123,6 +122,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isActive: true,
         targetForm: 'competition',
         imageUrl: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&q=80&w=1600'
+      },
+      {
+        id: 'ad-2',
+        title: 'Neural Dreams Vol. 1',
+        subtitle: 'AI CINEMA SPECIAL',
+        description: 'Witness the frontier of generative cinematography in our specialized AI Hall.',
+        actionText: 'Explore AI Hall',
+        isActive: true,
+        targetForm: 'festival',
+        imageUrl: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?auto=format&fit=crop&q=80&w=1600'
+      },
+      {
+        id: 'ad-3',
+        title: 'Premiere Night Schedule',
+        subtitle: 'RESERVE YOUR SEAT',
+        description: 'Book exclusive screening slots for your project and host a live digital premiere.',
+        actionText: 'Book Premiere',
+        isActive: true,
+        targetForm: 'premiere',
+        imageUrl: 'https://images.unsplash.com/photo-1485846234645-a62644ef7467?auto=format&fit=crop&q=80&w=1600'
       }
     ]));
   }, []);
@@ -201,10 +220,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser(prev => {
       if (!prev) return null;
       const updated = { ...prev, ...data, lastActive: new Date().toISOString() };
-      
-      // Critical: Update the master list immediately to ensure persistence
       setKnownUsers(all => all.map(u => u.id === prev.id ? updated : u));
-      
       return updated;
     });
   }, []);
@@ -213,7 +229,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setKnownUsers(prev => prev.map(u => {
       if (u.id === userId) {
         const updated = { ...u, ...data };
-        // Sync active session if the updated user is the current user
         if (user?.id === userId) setUser(updated);
         return updated;
       }
