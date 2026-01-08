@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { UserRole, User } from '../types';
+import { UserRole } from '../types';
 import BaseModal from '../components/Modals/BaseModal';
 import EditProfileModal from '../components/Modals/EditProfileModal';
 
@@ -94,7 +94,6 @@ const Profile: React.FC = () => {
   const [photoSource, setPhotoSource] = useState<'selection' | 'camera' | 'gallery'>('selection');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Extract ID from hash if viewing someone else
   const targetId = useMemo(() => {
     const hash = window.location.hash;
     if (hash.startsWith('#/profile/')) {
@@ -118,9 +117,9 @@ const Profile: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2-2V6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
-        <h2 className="text-3xl font-serif font-bold mb-3 gold-text">Profile Not Found</h2>
-        <p className="text-neutral-500 mb-6 leading-relaxed max-sm text-sm">
-          The visionary you are looking for has not yet stepped onto the digital stage.
+        <h2 className="text-3xl font-serif font-bold mb-3 gold-text">Visionary Unknown</h2>
+        <p className="text-neutral-500 mb-6 leading-relaxed max-sm text-sm italic">
+          The cinematic records for this profile have been moved to the festival archives.
         </p>
         <button 
           onClick={() => window.location.hash = '/'}
@@ -152,11 +151,11 @@ const Profile: React.FC = () => {
   };
 
   const myFilms = films.filter(f => f.creatorId === profileUser.id);
+  const isJury = profileUser.role === UserRole.JUDGE || profileUser.role === UserRole.ADMIN;
 
   return (
     <div className="pt-24 pb-16 px-6 max-w-5xl mx-auto">
-      {/* Profile Header Card */}
-      <div className="bg-neutral-900 border border-neutral-800 rounded-[2rem] overflow-hidden mb-12 shadow-xl">
+      <div className="bg-neutral-900 border border-neutral-800 rounded-[2rem] overflow-hidden mb-12 shadow-2xl">
         <div className="h-40 bg-red-carpet relative">
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="absolute -bottom-12 left-8 md:left-12">
@@ -197,13 +196,13 @@ const Profile: React.FC = () => {
               </button>
             ) : (
               <a 
-                href={`mailto:${profileUser.email}?subject=Bharat CINEFEST Connection Request`}
+                href={`mailto:${profileUser.email}?subject=Bharat CINEFEST Networking: ${currentUser?.name || 'Inquiry'}`}
                 className="px-6 py-2 bg-amber-500 gold-glow text-black rounded-full text-[9px] font-bold uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2 shadow-xl animate-in slide-in-from-right-4"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z" />
                 </svg>
-                Connect with me
+                Connect with {profileUser.role}
               </a>
             )}
           </div>
@@ -215,10 +214,10 @@ const Profile: React.FC = () => {
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <h2 className="text-3xl font-serif font-bold tracking-tight">{profileUser.name}</h2>
                 <div className="flex gap-2">
-                  <span className="px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[8px] font-bold uppercase tracking-[0.2em]">
+                  <span className={`px-3 py-1 border rounded-full text-[8px] font-bold uppercase tracking-[0.2em] ${isJury ? 'bg-amber-500 text-black border-amber-400' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
                     {profileUser.role}
                   </span>
-                  {profileUser.gender && (
+                  {profileUser.gender && profileUser.gender !== 'Prefer not to say' && (
                     <span className="px-3 py-1 bg-white/5 text-neutral-400 border border-white/10 rounded-full text-[8px] font-bold uppercase tracking-[0.2em]">
                       {profileUser.gender}
                     </span>
@@ -239,7 +238,7 @@ const Profile: React.FC = () => {
               )}
 
               <div className="flex items-center gap-1.5 mb-6 text-neutral-600">
-                <span className="text-[9px] font-mono tracking-tighter opacity-60">ID: {profileUser.principal}</span>
+                <span className="text-[9px] font-mono tracking-tighter opacity-60 uppercase">Credential ID: {profileUser.principal.split('-')[0]}...</span>
               </div>
               <p className="text-neutral-400 leading-relaxed text-base font-serif pl-3 italic border-l border-neutral-800">
                 {profileUser.bio || "Director, Visionary, Storyteller."}
@@ -247,24 +246,23 @@ const Profile: React.FC = () => {
             </div>
             <div className="bg-black/20 rounded-2xl p-6 border border-neutral-800 space-y-4">
                <div className="flex justify-between items-center pb-3 border-b border-neutral-800/30">
-                  <span className="text-[9px] text-neutral-600 uppercase tracking-widest font-bold">Works</span>
+                  <span className="text-[9px] text-neutral-600 uppercase tracking-widest font-bold">Submissions</span>
                   <span className="text-xl font-serif font-bold text-amber-500">{myFilms.length}</span>
                </div>
                <div className="flex justify-between items-center">
-                  <span className="text-[9px] text-neutral-600 uppercase tracking-widest font-bold">Awards</span>
-                  <span className="text-xl font-serif font-bold text-white">3</span>
+                  <span className="text-[9px] text-neutral-600 uppercase tracking-widest font-bold">Laurels</span>
+                  <span className="text-xl font-serif font-bold text-white">{isJury ? 'Elite Jury' : '3'}</span>
                </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Portfolio Section */}
       <div className="space-y-6">
         <div className="flex items-end justify-between border-b border-neutral-800 pb-4">
           <div>
-            <h3 className="text-2xl font-serif font-bold mb-1">{isOwnProfile ? 'My Portfolio' : `${profileUser.name}'s Cinematic Portfolio`}</h3>
-            <p className="text-neutral-600 text-[10px]">Exploring artistic narratives and visionary works.</p>
+            <h3 className="text-2xl font-serif font-bold mb-1">{isOwnProfile ? 'My Portfolio' : `${profileUser.name}'s Showcase`}</h3>
+            <p className="text-neutral-600 text-[10px] uppercase tracking-widest">Visionary Works & Cinematic Experiments</p>
           </div>
         </div>
 
@@ -273,10 +271,7 @@ const Profile: React.FC = () => {
             {myFilms.map(film => (
               <div 
                 key={film.id} 
-                onClick={() => {
-                    // Option to play film directly from profile
-                    // For now keeping simpler layout
-                }}
+                onClick={() => {}}
                 className="group flex gap-4 p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl hover:border-amber-500/20 transition-all duration-300 shadow-lg cursor-pointer"
               >
                 <div className="w-32 h-20 relative flex-shrink-0 overflow-hidden rounded-xl">
@@ -290,10 +285,10 @@ const Profile: React.FC = () => {
                 <div className="flex flex-col justify-between flex-grow">
                    <div>
                      <h4 className="font-bold text-sm group-hover:text-amber-500 transition-colors leading-tight mb-0.5">{film.title}</h4>
-                     <p className="text-[9px] text-neutral-600 font-medium italic">Uploaded on {new Date(film.uploadDate).toLocaleDateString()}</p>
+                     <p className="text-[9px] text-neutral-600 font-medium italic">Added {new Date(film.uploadDate).toLocaleDateString()}</p>
                    </div>
                    <div className="flex items-center gap-2">
-                     <button className="flex-grow py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-[8px] font-bold uppercase tracking-[0.1em] text-white border border-neutral-700">
+                     <button className="flex-grow py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-[8px] font-bold uppercase tracking-[0.1em] text-white border border-neutral-700 transition-colors">
                         {isOwnProfile ? 'Manage' : 'View Film'}
                      </button>
                    </div>
@@ -303,22 +298,22 @@ const Profile: React.FC = () => {
           </div>
         ) : (
           <div className="py-12 px-6 text-center border-2 border-dashed border-neutral-800/50 rounded-2xl bg-neutral-900/10">
-             <h4 className="text-base font-serif font-bold mb-1">No Submissions Found</h4>
+             <h4 className="text-base font-serif font-bold mb-1 text-neutral-500">Portfolio Archive is Currently Empty</h4>
              {isOwnProfile && (
                <button 
                  onClick={() => window.location.hash = '/'}
                  className="mt-4 px-6 py-2 bg-neutral-800 text-white font-bold uppercase text-[9px] tracking-[0.15em] rounded-full hover:bg-amber-500 hover:text-black transition-colors"
                >
-                 Start Participation
+                 Submit My Vision
                </button>
              )}
           </div>
         )}
       </div>
 
-      <div className="mt-16 pt-8 border-t border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="mt-16 pt-8 border-t border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-4 opacity-60">
         <div className="text-neutral-600 text-[9px] italic">
-          {isOwnProfile ? 'Internet Identity Secure Session.' : `Viewing Public Visionary Record.`}
+          {isOwnProfile ? 'Biometric Identity Verified.' : `Public Visionary Profile Record.`}
         </div>
         {isOwnProfile && (
           <button 
@@ -330,7 +325,6 @@ const Profile: React.FC = () => {
         )}
       </div>
 
-      {/* Profile Picture Update Modal */}
       <BaseModal isOpen={showPhotoModal} onClose={() => setShowPhotoModal(false)} title="Update Masterpiece Frame">
         {photoSource === 'selection' && (
           <div className="flex flex-col gap-4 py-4 animate-in fade-in zoom-in duration-300">
