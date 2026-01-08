@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import TermsSection from './TermsSection';
 import { useAppContext } from '../../store/AppContext';
-import { UserRole, FilmCategory } from '../../types';
+import { UserRole, FilmCategory, User } from '../../types';
 
 interface FormProps {
   onSuccess: () => void;
@@ -146,9 +146,10 @@ export const FilmFestivalEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
 };
 
 export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
-  const { user, films, competitions, addFilm } = useAppContext();
+  const { user, films, competitions, addFilm, knownUsers } = useAppContext();
   // Always focus on the first (most relevant/featured) competition
   const featuredComp = competitions[0];
+  
   const [selectedFilmId, setSelectedFilmId] = useState('');
   const [formData, setFormData] = useState({
     title: '',
@@ -161,6 +162,12 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
   const [agreed, setAgreed] = useState(false);
   const [paying, setPaying] = useState(false);
   const [ytError, setYtError] = useState(false);
+
+  // Map jury IDs to User objects
+  const juryMembers = useMemo(() => {
+    if (!featuredComp || !featuredComp.juryIds) return [];
+    return featuredComp.juryIds.map(id => knownUsers.find(u => u.id === id)).filter(Boolean) as User[];
+  }, [featuredComp, knownUsers]);
 
   const filteredFilms = useMemo(() => {
     let list = films.filter(f => f.creatorId === user?.id && (f.isAiGenerated === formData.isAiGenerated));
@@ -204,6 +211,10 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
     }, 2000);
   };
 
+  const goToProfile = (userId: string) => {
+     window.location.hash = `#/profile/${userId}`;
+  };
+
   if (!featuredComp) return <div className="text-center py-12 text-neutral-500">No active competitions found.</div>;
 
   if (paying) return (
@@ -224,6 +235,27 @@ export const CompetitionEntryForm: React.FC<FormProps> = ({ onSuccess }) => {
          </div>
          <h3 className="text-lg font-serif font-bold text-white mb-1">{featuredComp.name}</h3>
          <p className="text-[10px] text-neutral-400 leading-relaxed italic mb-3">"{featuredComp.description}"</p>
+         
+         {/* Meet the Jury Spotlight */}
+         {juryMembers.length > 0 && (
+           <div className="mb-4 pt-3 border-t border-white/5">
+              <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest block mb-2">Meet the Jury</span>
+              <div className="flex flex-wrap gap-2">
+                {juryMembers.map(jury => (
+                  <button 
+                    key={jury.id}
+                    type="button"
+                    onClick={() => goToProfile(jury.id)}
+                    className="flex items-center gap-2 p-1 bg-black/40 border border-neutral-800 rounded-full hover:border-amber-500/50 transition-all group/jury"
+                  >
+                    <img src={jury.avatarUrl} className="w-6 h-6 rounded-full object-cover grayscale group-hover/jury:grayscale-0 transition-all" alt={jury.name} />
+                    <span className="text-[9px] font-bold text-neutral-400 pr-2 group-hover/jury:text-white">{jury.name}</span>
+                  </button>
+                ))}
+              </div>
+           </div>
+         )}
+
          <div className="flex justify-between items-center py-2 border-t border-white/5">
             <div className="flex flex-col">
                <span className="text-[7px] text-neutral-500 font-bold uppercase tracking-tighter">Reward Pool</span>

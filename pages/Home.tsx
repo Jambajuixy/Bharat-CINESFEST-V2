@@ -4,7 +4,7 @@ import Hero from '../components/Hero';
 import FeaturedDirectors from '../components/FeaturedDirectors';
 import { useAppContext } from '../store/AppContext';
 import { Icons } from '../constants';
-import { Film, FilmCategory } from '../types';
+import { Film, FilmCategory, User } from '../types';
 import VideoPlayerModal from '../components/Modals/VideoPlayerModal';
 import StarRating from '../components/StarRating';
 
@@ -123,7 +123,7 @@ const FilmCard: React.FC<{ film: Film; onPlay: (film: Film) => void }> = ({ film
 };
 
 const Home: React.FC = () => {
-  const { films } = useAppContext();
+  const { films, competitions, knownUsers } = useAppContext();
   const [activeHall, setActiveHall] = useState<'human' | 'ai'>('human');
   const [activeCategory, setActiveCategory] = useState<'all' | 'gallery' | 'premieres' | 'contests'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -133,6 +133,12 @@ const Home: React.FC = () => {
   useEffect(() => {
     setIsExpanded(false);
   }, [activeHall, activeCategory, searchQuery]);
+
+  const featuredComp = competitions[0];
+  const activeJury = useMemo(() => {
+    if (activeCategory !== 'contests' || !featuredComp) return [];
+    return featuredComp.juryIds.map(id => knownUsers.find(u => u.id === id)).filter(Boolean) as User[];
+  }, [activeCategory, featuredComp, knownUsers]);
 
   const filteredFilms = useMemo(() => {
     let list = films.filter(f => activeHall === 'ai' ? f.isAiGenerated : !f.isAiGenerated);
@@ -151,6 +157,10 @@ const Home: React.FC = () => {
   }, [films, activeHall, activeCategory, searchQuery]);
 
   const displayedFilms = isExpanded ? filteredFilms : filteredFilms.slice(0, 6);
+
+  const goToProfile = (uid: string) => {
+    window.location.hash = `#/profile/${uid}`;
+  };
 
   return (
     <div className={`pb-16 transition-colors duration-1000 ${activeHall === 'ai' ? 'bg-[#000408]' : 'bg-[#050505]'}`}>
@@ -189,6 +199,58 @@ const Home: React.FC = () => {
       </div>
 
       <div className={`max-w-7xl mx-auto px-6 py-12 relative transition-all duration-1000 ${activeHall === 'ai' ? 'neural-grid' : ''}`}>
+        
+        {/* Meet the Jury Banner - Contest Specific UI */}
+        {activeCategory === 'contests' && featuredComp && (
+          <div className="mb-12 animate-in fade-in slide-in-from-top-6 duration-700">
+             <div className="bg-neutral-900/60 border border-neutral-800 rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row items-center gap-10 shadow-2xl overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[80px] pointer-events-none"></div>
+                
+                <div className="flex-1 space-y-4">
+                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
+                      <Icons.Trophy className="w-3 h-3 text-amber-500" />
+                      <span className="text-[8px] font-bold text-amber-500 uppercase tracking-widest">Active Prize Pool</span>
+                   </div>
+                   <h2 className="text-3xl md:text-4xl font-serif font-bold gold-text leading-tight">{featuredComp.name}</h2>
+                   <p className="text-neutral-400 text-sm italic font-serif leading-relaxed">"{featuredComp.description}"</p>
+                   <div className="flex gap-8 pt-4">
+                      <div>
+                        <div className="text-[8px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Jury Prize</div>
+                        <div className="text-xl font-bold text-white">{featuredComp.prize}</div>
+                      </div>
+                      <div>
+                        <div className="text-[8px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Status</div>
+                        <div className="text-xl font-bold text-green-500 flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                          Entries Open
+                        </div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="w-full md:w-auto flex-shrink-0 bg-black/40 border border-neutral-800 rounded-3xl p-6 relative">
+                   <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.3em] mb-4 text-center">The Jury Pavilion</h3>
+                   <div className="flex -space-x-4 hover:space-x-2 transition-all duration-500 justify-center">
+                      {activeJury.map((jury) => (
+                        <div 
+                          key={jury.id}
+                          onClick={() => goToProfile(jury.id)}
+                          className="w-16 h-16 rounded-2xl border-2 border-neutral-900 overflow-hidden cursor-pointer hover:scale-110 hover:-translate-y-2 hover:z-20 transition-all duration-300 gold-glow group/j"
+                          title={`View ${jury.name}'s Profile`}
+                        >
+                          <img src={jury.avatarUrl} className="w-full h-full object-cover group-hover/j:scale-110 transition-transform" alt={jury.name} />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/j:opacity-100 flex items-center justify-center transition-opacity">
+                             <Icons.Star className="w-4 h-4 text-white fill-white" />
+                          </div>
+                        </div>
+                      ))}
+                   </div>
+                   <p className="text-[8px] text-neutral-600 font-bold uppercase tracking-widest mt-6 text-center italic">Experts in Human & AI Cinematic Narrative</p>
+                </div>
+             </div>
+          </div>
+        )}
+
         {activeHall === 'ai' && (
           <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.05)_0%,transparent_50%)]"></div>
         )}

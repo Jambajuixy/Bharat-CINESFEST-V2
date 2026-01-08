@@ -26,12 +26,12 @@ export interface User {
   bio: string;
   role: UserRole;
   gender?: string;
-  email: string; // Mandatory contact record
-  phone: string; // Mandatory contact record
-  principal: string; // Simulated Internet Identity principal
+  email: string;
+  phone: string;
+  principal: string;
   avatarUrl?: string;
-  website?: string; // Portfolio link
-  lastActive: string; // ISO String for activity tracking
+  website?: string;
+  lastActive: string;
   joinedAt: string;
 }
 
@@ -49,7 +49,7 @@ export interface Film {
   score?: number;
   votes: number;
   ratingCount: number;
-  isContestActive?: boolean; // Controls if voting is allowed
+  isContestActive?: boolean;
   comments: Comment[];
   isAiGenerated?: boolean;
 }
@@ -71,7 +71,8 @@ export interface Competition {
   prize: string;
   entryFee: number;
   endsAt: string;
-  imageUrl?: string; // Added image support for competitions
+  imageUrl?: string;
+  juryIds: string[]; // Linked jury member IDs
 }
 
 export interface Advertisement {
@@ -84,7 +85,7 @@ export interface Advertisement {
   entryFee?: number;
   isActive: boolean;
   imageUrl?: string;
-  videoUrl?: string; // New field for cinematic backgrounds
+  videoUrl?: string;
   targetForm?: 'festival' | 'competition' | 'premiere';
 }
 

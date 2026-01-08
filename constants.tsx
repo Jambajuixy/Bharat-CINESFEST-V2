@@ -3,9 +3,10 @@ import React from 'react';
 import { DirectorInterview, Competition, Film, FilmCategory } from './types';
 
 export const COMPETITIONS: Competition[] = [
-  { id: 'indie-2024', name: 'Global Indie Gems', description: 'Celebrating small crews with big hearts.', prize: '₹1,00,000 INR', entryFee: 2000, endsAt: '2024-12-31T23:59:59Z' },
-  { id: 'sci-fi-shorts', name: 'Future Visions', description: 'The best in sci-fi and speculative fiction.', prize: '₹1,00,000 INR', entryFee: 1500, endsAt: '2024-11-15T23:59:59Z' },
-  { id: 'docu-series', name: 'Real Life Frames', description: 'Brave stories from the real world.', prize: '₹1,00,000 INR', entryFee: 2500, endsAt: '2024-10-31T23:59:59Z' }
+  // Add required juryIds to meet the Competition interface definition
+  { id: 'indie-2024', name: 'Global Indie Gems', description: 'Celebrating small crews with big hearts.', prize: '₹1,00,000 INR', entryFee: 2000, endsAt: '2024-12-31T23:59:59Z', juryIds: ['dir-01', 'jury-01'] },
+  { id: 'sci-fi-shorts', name: 'Future Visions', description: 'The best in sci-fi and speculative fiction.', prize: '₹1,00,000 INR', entryFee: 1500, endsAt: '2024-11-15T23:59:59Z', juryIds: ['dir-01', 'jury-01'] },
+  { id: 'docu-series', name: 'Real Life Frames', description: 'Brave stories from the real world.', prize: '₹1,00,000 INR', entryFee: 2500, endsAt: '2024-10-31T23:59:59Z', juryIds: ['dir-01', 'jury-01'] }
 ];
 
 export const FEATURED_INTERVIEWS: DirectorInterview[] = [

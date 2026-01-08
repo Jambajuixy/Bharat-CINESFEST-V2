@@ -83,7 +83,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       {
         id: 'dir-01',
         name: 'Festival Director',
-        bio: 'Chief Curator of Bharat CINEFEST.',
+        bio: 'Chief Curator of Bharat CINEFEST. Overseeing human and AI expressions.',
         role: UserRole.ADMIN,
         email: 'director@bharatcinefest.com',
         phone: '+91 99999 88888',
@@ -91,6 +91,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Director',
         lastActive: new Date().toISOString(),
         joinedAt: '2023-01-01T09:00:00Z'
+      },
+      {
+        id: 'jury-01',
+        name: 'Arjun Mehra',
+        bio: 'Award-winning cinematographer and documentary filmmaker with 20 years of experience.',
+        role: UserRole.JUDGE,
+        email: 'arjun@cinema.com',
+        phone: '+91 98888 77777',
+        principal: 'jury-arjun',
+        avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun',
+        lastActive: new Date().toISOString(),
+        joinedAt: '2023-05-01T10:00:00Z'
       }
     ]);
     setKnownUsers(initialUsers);
@@ -108,7 +120,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFilms(hydrate(STORAGE_KEYS.FILMS, TEST_FILMS));
     setVotedFilmIds(hydrate(STORAGE_KEYS.VOTES, []));
     setUserRatings(hydrate(STORAGE_KEYS.RATINGS, {}));
-    setCompetitions(hydrate(STORAGE_KEYS.COMPS, INITIAL_COMPETITIONS));
+    
+    // Inject jury IDs into initial competitions if not present
+    const compsWithJury = INITIAL_COMPETITIONS.map(c => ({
+      ...c,
+      juryIds: c.juryIds || ['dir-01', 'jury-01']
+    }));
+    setCompetitions(hydrate(STORAGE_KEYS.COMPS, compsWithJury));
+    
     setInterviews(hydrate(STORAGE_KEYS.INTERVIEWS, INITIAL_INTERVIEWS));
     setAdvertisements(hydrate(STORAGE_KEYS.ADS, [
       {
@@ -146,7 +165,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ]));
   }, []);
 
-  // Sync session and known users to localStorage
   useEffect(() => {
     const timeout = setTimeout(() => {
       try {
