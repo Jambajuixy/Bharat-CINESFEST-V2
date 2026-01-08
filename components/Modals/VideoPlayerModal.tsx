@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import BaseModal from './BaseModal';
 import { Film, FilmCategory } from '../../types';
 import { Icons } from '../../constants';
@@ -21,7 +21,7 @@ interface VideoPlayerModalProps {
 const APPLAUSE_SOUND_URL = 'https://www.soundjay.com/human/sounds/applause-01.mp3';
 
 const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ film, isOpen, onClose }) => {
-  const { addComment, submitVote, user, login } = useAppContext();
+  const { addComment, submitVote, user, login, knownUsers } = useAppContext();
   const [aiReview, setAiReview] = useState<string | null>(null);
   const [groundingSources, setGroundingSources] = useState<GroundingSource[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,6 +34,12 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ film, isOpen, onClo
 
   // Pre-load audio for instant feedback
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Find uploader info
+  const creator = useMemo(() => {
+    if (!film) return null;
+    return knownUsers.find(u => u.id === film.creatorId) || null;
+  }, [film, knownUsers]);
 
   useEffect(() => {
     const audio = new Audio(APPLAUSE_SOUND_URL);
@@ -161,6 +167,13 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ film, isOpen, onClo
     if (type === 'ovation') setHasOvated(true);
   };
 
+  const goToCreatorProfile = () => {
+    if (creator) {
+      window.location.hash = `#/profile/${creator.id}`;
+      onClose();
+    }
+  };
+
   const isPremiere = film.category === FilmCategory.PREMIERE;
 
   return (
@@ -178,6 +191,33 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ film, isOpen, onClo
               </div>
             )}
             <button onClick={() => setIsTheatricalMode(!isTheatricalMode)} className="absolute bottom-4 right-4 p-2 bg-black/60 backdrop-blur-md rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></button>
+          </div>
+
+          {/* Creator Attribution Bar */}
+          <div className="bg-neutral-900/50 border border-neutral-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 transition-all hover:border-amber-500/20">
+             <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-neutral-800 border border-neutral-700 overflow-hidden gold-glow shadow-lg">
+                  <img 
+                    src={creator?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${creator?.id || 'anon'}`} 
+                    alt="Uploader" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                   <div className="text-[8px] font-bold text-neutral-500 uppercase tracking-[0.3em] mb-0.5">Visionary Curator</div>
+                   <h4 className="text-sm font-serif font-bold text-white">{creator?.name || "Unknown Creator"}</h4>
+                   <p className="text-[9px] text-amber-500/70 font-bold uppercase tracking-widest">{creator?.role || "Indie Filmmaker"}</p>
+                </div>
+             </div>
+             <button 
+               onClick={goToCreatorProfile}
+               className="px-6 py-2.5 bg-neutral-800 hover:bg-amber-500 hover:text-black border border-neutral-700 rounded-full text-[9px] font-bold uppercase tracking-widest transition-all group flex items-center gap-2"
+             >
+                Visit Profile
+                <svg className="w-3 h-3 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                </svg>
+             </button>
           </div>
           
           <div className={`space-y-6 transition-opacity duration-700 ${isTheatricalMode ? 'opacity-30 hover:opacity-100' : 'opacity-100'}`}>

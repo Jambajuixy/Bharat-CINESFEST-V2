@@ -126,22 +126,22 @@ const Hero: React.FC<HeroProps> = ({ activeHall, onHallSwitch }) => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-20 text-center max-w-4xl px-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 flex flex-col items-center">
-        <div className="inline-block px-4 py-1.5 mb-4 border border-amber-500/30 rounded-full bg-amber-500/10 backdrop-blur-md">
-           <span className="text-amber-400 font-bold tracking-[0.4em] uppercase text-[10px]">A Night of Extraordinary Visions</span>
+      <div className="relative z-20 text-center max-w-6xl w-full px-6 animate-in fade-in slide-in-from-bottom-12 duration-1000 flex flex-col items-center">
+        <div className="inline-block px-4 py-1.5 mb-3 border border-amber-500/30 rounded-full bg-amber-500/10 backdrop-blur-md">
+           <span className="text-amber-400 font-bold tracking-[0.4em] uppercase text-[9px]">A Night of Extraordinary Visions</span>
         </div>
         
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-serif font-bold mb-3 leading-tight tracking-tight text-white drop-shadow-2xl">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif font-bold mb-3 leading-tight tracking-tight text-white drop-shadow-2xl">
           The <span className="gold-text italic">Red Carpet</span> <br className="sm:hidden" /> is Waiting.
         </h1>
         
-        <p className="text-[10px] sm:text-sm text-neutral-300 font-light mb-6 max-w-lg mx-auto leading-relaxed drop-shadow-md">
+        <p className="text-[9px] sm:text-xs text-neutral-400 font-light mb-6 max-w-md mx-auto leading-relaxed drop-shadow-md">
           Step into the exclusive circle of elite independent filmmaking. 
           Your masterpiece deserves the world's most glamorous stage.
         </p>
 
-        {/* Contest Banner placed above the Participate button - reduced margin */}
-        <div className="w-full max-w-xl mx-auto mb-6">
+        {/* Contest Banner placed above the Participate button - INCREASED WIDTH AND PROMINENCE */}
+        <div className="w-full max-w-4xl mx-auto mb-10">
           <ContestBanner onAction={(formType) => {
             if (formType) {
               setActiveForm(formType);

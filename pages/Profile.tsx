@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '../store/AppContext';
-import { UserRole } from '../types';
+import { UserRole, User } from '../types';
 import BaseModal from '../components/Modals/BaseModal';
 import EditProfileModal from '../components/Modals/EditProfileModal';
 
@@ -88,13 +88,29 @@ const CameraCapture: React.FC<{ onCapture: (dataUrl: string) => void, onClose: (
 };
 
 const Profile: React.FC = () => {
-  const { user, updateUser, films, logout } = useAppContext();
+  const { user: currentUser, updateUser, films, logout, knownUsers } = useAppContext();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [photoSource, setPhotoSource] = useState<'selection' | 'camera' | 'gallery'>('selection');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!user) {
+  // Extract ID from hash if viewing someone else
+  const targetId = useMemo(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#/profile/')) {
+      return hash.replace('#/profile/', '');
+    }
+    return null;
+  }, [window.location.hash]);
+
+  const profileUser = useMemo(() => {
+    if (!targetId) return currentUser;
+    return knownUsers.find(u => u.id === targetId) || null;
+  }, [targetId, currentUser, knownUsers]);
+
+  const isOwnProfile = !targetId || (currentUser && targetId === currentUser.id);
+
+  if (!profileUser) {
     return (
       <div className="pt-32 pb-16 px-6 text-center max-w-xl mx-auto min-h-[70vh] flex flex-col justify-center items-center">
         <div className="w-16 h-16 bg-red-carpet/10 rounded-full flex items-center justify-center mb-5 border border-amber-500/10">
@@ -102,13 +118,13 @@ const Profile: React.FC = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2-2V6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
         </div>
-        <h2 className="text-3xl font-serif font-bold mb-3 gold-text">Exclusive Access</h2>
+        <h2 className="text-3xl font-serif font-bold mb-3 gold-text">Profile Not Found</h2>
         <p className="text-neutral-500 mb-6 leading-relaxed max-sm text-sm">
-          Please sign in via Internet Identity to manage your cinematic profile.
+          The visionary you are looking for has not yet stepped onto the digital stage.
         </p>
         <button 
           onClick={() => window.location.hash = '/'}
-          className="px-8 py-3 bg-red-carpet gold-glow rounded-full font-bold uppercase tracking-[0.2em] text-[10px] hover:scale-105 transition-all"
+          className="px-8 py-3 bg-neutral-900 border border-neutral-800 rounded-full font-bold uppercase tracking-[0.2em] text-[10px] hover:text-amber-500 transition-all"
         >
           Grand Entrance
         </button>
@@ -135,7 +151,7 @@ const Profile: React.FC = () => {
     }
   };
 
-  const myFilms = films.filter(f => f.creatorId === user.id);
+  const myFilms = films.filter(f => f.creatorId === profileUser.id);
 
   return (
     <div className="pt-24 pb-16 px-6 max-w-5xl mx-auto">
@@ -147,34 +163,49 @@ const Profile: React.FC = () => {
             <div className="group relative">
               <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-neutral-800 border-4 border-neutral-900 overflow-hidden gold-glow transition-transform">
                 <img 
-                  src={user.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`} 
+                  src={profileUser.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileUser.id}`} 
                   alt="profile" 
                   className="w-full h-full object-cover bg-neutral-700" 
                 />
               </div>
-              <button 
-                onClick={() => {
-                  setPhotoSource('selection');
-                  setShowPhotoModal(true);
-                }}
-                className="absolute bottom-1 right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-black border-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                title="Update Profile Picture"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </button>
+              {isOwnProfile && (
+                <button 
+                  onClick={() => {
+                    setPhotoSource('selection');
+                    setShowPhotoModal(true);
+                  }}
+                  className="absolute bottom-1 right-1 w-7 h-7 bg-amber-500 rounded-lg flex items-center justify-center text-black border-2 border-neutral-900 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                  title="Update Profile Picture"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
+          
           <div className="absolute bottom-4 right-8 flex gap-2">
-             <button 
-              onClick={() => setIsEditModalOpen(true)}
-              className="px-5 py-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-[9px] font-bold uppercase tracking-widest text-white hover:bg-white/10 transition-all flex items-center gap-2"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              Edit Profile
-            </button>
+            {isOwnProfile ? (
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="px-5 py-2 bg-white/5 backdrop-blur-md border border-white/10 rounded-full text-[9px] font-bold uppercase tracking-widest text-white hover:bg-white/10 transition-all flex items-center gap-2"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                Edit Profile
+              </button>
+            ) : (
+              <a 
+                href={`mailto:${profileUser.email}?subject=Bharat CINEFEST Connection Request`}
+                className="px-6 py-2 bg-amber-500 gold-glow text-black rounded-full text-[9px] font-bold uppercase tracking-widest hover:bg-white transition-all flex items-center gap-2 shadow-xl animate-in slide-in-from-right-4"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z" />
+                </svg>
+                Connect with me
+              </a>
+            )}
           </div>
         </div>
         
@@ -182,36 +213,36 @@ const Profile: React.FC = () => {
           <div className="grid lg:grid-cols-3 gap-10 items-start">
             <div className="lg:col-span-2">
               <div className="flex flex-wrap items-center gap-3 mb-2">
-                <h2 className="text-3xl font-serif font-bold tracking-tight">{user.name}</h2>
+                <h2 className="text-3xl font-serif font-bold tracking-tight">{profileUser.name}</h2>
                 <div className="flex gap-2">
                   <span className="px-3 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full text-[8px] font-bold uppercase tracking-[0.2em]">
-                    {user.role}
+                    {profileUser.role}
                   </span>
-                  {user.gender && (
+                  {profileUser.gender && (
                     <span className="px-3 py-1 bg-white/5 text-neutral-400 border border-white/10 rounded-full text-[8px] font-bold uppercase tracking-[0.2em]">
-                      {user.gender}
+                      {profileUser.gender}
                     </span>
                   )}
                 </div>
               </div>
               
-              {(user as any).website && (
+              {profileUser.website && (
                 <a 
-                  href={(user as any).website} 
+                  href={profileUser.website} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 mb-4 text-[10px] text-amber-500 hover:text-amber-400 transition-colors font-bold uppercase tracking-widest"
                 >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
                   Portfolio Website
                 </a>
               )}
 
               <div className="flex items-center gap-1.5 mb-6 text-neutral-600">
-                <span className="text-[9px] font-mono tracking-tighter opacity-60">ID: {user.principal}</span>
+                <span className="text-[9px] font-mono tracking-tighter opacity-60">ID: {profileUser.principal}</span>
               </div>
               <p className="text-neutral-400 leading-relaxed text-base font-serif pl-3 italic border-l border-neutral-800">
-                {user.bio || "Director, Visionary, Storyteller."}
+                {profileUser.bio || "Director, Visionary, Storyteller."}
               </p>
             </div>
             <div className="bg-black/20 rounded-2xl p-6 border border-neutral-800 space-y-4">
@@ -232,8 +263,8 @@ const Profile: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-end justify-between border-b border-neutral-800 pb-4">
           <div>
-            <h3 className="text-2xl font-serif font-bold mb-1">Portfolio</h3>
-            <p className="text-neutral-600 text-[10px]">Managing your cinematic legacy.</p>
+            <h3 className="text-2xl font-serif font-bold mb-1">{isOwnProfile ? 'My Portfolio' : `${profileUser.name}'s Cinematic Portfolio`}</h3>
+            <p className="text-neutral-600 text-[10px]">Exploring artistic narratives and visionary works.</p>
           </div>
         </div>
 
@@ -242,7 +273,11 @@ const Profile: React.FC = () => {
             {myFilms.map(film => (
               <div 
                 key={film.id} 
-                className="group flex gap-4 p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl hover:border-amber-500/20 transition-all duration-300 shadow-lg"
+                onClick={() => {
+                    // Option to play film directly from profile
+                    // For now keeping simpler layout
+                }}
+                className="group flex gap-4 p-4 bg-neutral-900/60 border border-neutral-800 rounded-2xl hover:border-amber-500/20 transition-all duration-300 shadow-lg cursor-pointer"
               >
                 <div className="w-32 h-20 relative flex-shrink-0 overflow-hidden rounded-xl">
                   <img src={film.thumbnailUrl} className="w-full h-full object-cover" alt={film.title} />
@@ -259,7 +294,7 @@ const Profile: React.FC = () => {
                    </div>
                    <div className="flex items-center gap-2">
                      <button className="flex-grow py-1.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-[8px] font-bold uppercase tracking-[0.1em] text-white border border-neutral-700">
-                        Manage
+                        {isOwnProfile ? 'Manage' : 'View Film'}
                      </button>
                    </div>
                 </div>
@@ -269,26 +304,30 @@ const Profile: React.FC = () => {
         ) : (
           <div className="py-12 px-6 text-center border-2 border-dashed border-neutral-800/50 rounded-2xl bg-neutral-900/10">
              <h4 className="text-base font-serif font-bold mb-1">No Submissions Found</h4>
-             <button 
-               onClick={() => window.location.hash = '/'}
-               className="mt-4 px-6 py-2 bg-neutral-800 text-white font-bold uppercase text-[9px] tracking-[0.15em] rounded-full hover:bg-amber-500 hover:text-black transition-colors"
-             >
-               Start Participation
-             </button>
+             {isOwnProfile && (
+               <button 
+                 onClick={() => window.location.hash = '/'}
+                 className="mt-4 px-6 py-2 bg-neutral-800 text-white font-bold uppercase text-[9px] tracking-[0.15em] rounded-full hover:bg-amber-500 hover:text-black transition-colors"
+               >
+                 Start Participation
+               </button>
+             )}
           </div>
         )}
       </div>
 
       <div className="mt-16 pt-8 border-t border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="text-neutral-600 text-[9px] italic">
-          Internet Identity Secure Session.
+          {isOwnProfile ? 'Internet Identity Secure Session.' : `Viewing Public Visionary Record.`}
         </div>
-        <button 
-          onClick={logout}
-          className="px-6 py-2 bg-red-900/10 text-red-500 border border-red-500/10 rounded-full text-[8px] font-bold uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all"
-        >
-          Logout
-        </button>
+        {isOwnProfile && (
+          <button 
+            onClick={logout}
+            className="px-6 py-2 bg-red-900/10 text-red-500 border border-red-500/10 rounded-full text-[8px] font-bold uppercase tracking-[0.2em] hover:bg-red-500 hover:text-white transition-all"
+          >
+            Logout
+          </button>
+        )}
       </div>
 
       {/* Profile Picture Update Modal */}

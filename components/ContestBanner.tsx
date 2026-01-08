@@ -46,10 +46,10 @@ const ContestBanner: React.FC<ContestBannerProps> = ({ onAction }) => {
   };
 
   return (
-    <div className="relative w-full group overflow-hidden rounded-lg bg-black border border-amber-500/20 shadow-[0_0_15px_rgba(139,0,0,0.1)] h-24 sm:h-28 md:h-32">
+    <div className="relative w-full group overflow-hidden rounded-[2rem] bg-black border border-amber-500/30 shadow-[0_0_40px_rgba(139,0,0,0.2)] h-48 sm:h-56 md:h-64">
       {/* Horizontal Sliding Track */}
       <div 
-        className="flex transition-transform duration-700 ease-in-out h-full"
+        className="flex transition-transform duration-1000 ease-in-out h-full"
         style={{ transform: `translateX(-${activeIndex * 100}%)` }}
       >
         {activeAds.map((ad) => {
@@ -59,42 +59,42 @@ const ContestBanner: React.FC<ContestBannerProps> = ({ onAction }) => {
               {/* Cinematic Background Layer */}
               <div className="absolute inset-0">
                 {videoId ? (
-                  <div className="absolute inset-0 w-full h-full pointer-events-none scale-125">
+                  <div className="absolute inset-0 w-full h-full pointer-events-none scale-150">
                      <iframe
-                       className="w-full h-full opacity-20"
+                       className="w-full h-full opacity-40"
                        src={`https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&modestbranding=1&rel=0&showinfo=0`}
                        frameBorder="0"
                        allow="autoplay; encrypted-media"
                      ></iframe>
                   </div>
                 ) : ad.imageUrl ? (
-                  <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover opacity-20" />
+                  <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover opacity-40 scale-105" />
                 ) : (
-                  <div className="absolute inset-0 bg-red-carpet opacity-70"></div>
+                  <div className="absolute inset-0 bg-red-carpet opacity-60"></div>
                 )}
                 
                 {/* Overlays */}
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></div>
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/10 to-black/80"></div>
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/20 to-black/80"></div>
               </div>
 
-              <div className="relative z-10 px-3 py-2 md:px-5 md:py-3 flex flex-row items-center justify-between gap-3 h-full">
-                <div className="flex-1 text-left">
-                  <div className="inline-flex items-center gap-1 px-1 py-0 bg-black/60 backdrop-blur-md rounded-full border border-amber-500/10 mb-1">
-                    <span className="flex h-1 w-1">
-                      <span className="animate-ping absolute inline-flex h-1 w-1 rounded-full bg-amber-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1 w-1 bg-amber-500"></span>
+              <div className="relative z-10 px-6 py-6 md:px-12 md:py-8 flex flex-row items-center justify-between gap-8 h-full">
+                <div className="flex-1 text-left space-y-3">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/60 backdrop-blur-md rounded-full border border-amber-500/20 mb-1">
+                    <span className="flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-1.5 w-1.5 rounded-full bg-amber-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
                     </span>
-                    <span className="text-[6px] font-bold text-amber-500 uppercase tracking-[0.2em]">{ad.subtitle}</span>
+                    <span className="text-[8px] font-bold text-amber-500 uppercase tracking-[0.3em]">{ad.subtitle}</span>
                   </div>
                   
-                  <h2 className="text-xs sm:text-sm md:text-base font-serif font-bold text-white leading-tight mb-0 line-clamp-1">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-serif font-bold text-white leading-tight drop-shadow-xl">
                     {ad.prize ? (
                       <>Win <span className="gold-text italic">Prize</span>: {ad.prize}</>
                     ) : ad.title}
                   </h2>
                   
-                  <p className="text-neutral-500 text-[6px] sm:text-[8px] max-w-sm font-light leading-tight line-clamp-1">
+                  <p className="text-neutral-300 text-[10px] sm:text-xs md:text-sm max-w-xl font-light leading-relaxed line-clamp-2 italic opacity-80">
                     {ad.description}
                   </p>
                 </div>
@@ -102,11 +102,11 @@ const ContestBanner: React.FC<ContestBannerProps> = ({ onAction }) => {
                 <div className="relative flex-shrink-0 group">
                   <button 
                     onClick={() => handleAction(ad)}
-                    className="relative px-3 py-1.5 sm:px-5 sm:py-2 bg-white text-black font-bold rounded text-[7px] sm:text-[8px] uppercase tracking-[0.1em] hover:bg-amber-500 transition-all duration-300 hover:scale-105 active:scale-95 shadow-md flex flex-col items-center min-w-[80px] sm:min-w-[100px]"
+                    className="relative px-8 py-3 sm:px-10 sm:py-4 bg-white text-black font-bold rounded-2xl text-[9px] sm:text-[10px] uppercase tracking-[0.2em] hover:bg-amber-500 transition-all duration-500 hover:scale-110 active:scale-95 shadow-2xl flex flex-col items-center min-w-[140px] sm:min-w-[180px]"
                   >
-                    <span className="mb-0">{ad.actionText}</span>
+                    <span className="mb-1">{ad.actionText}</span>
                     {ad.entryFee ? (
-                      <span className="text-[5px] sm:text-[6px] opacity-60 font-mono tracking-tighter">₹{ad.entryFee} Entry</span>
+                      <span className="text-[7px] sm:text-[8px] opacity-60 font-mono tracking-tighter border-t border-black/10 pt-1 mt-1 w-full text-center">₹{ad.entryFee} ENTRY FEE</span>
                     ) : null}
                   </button>
                 </div>
@@ -118,15 +118,33 @@ const ContestBanner: React.FC<ContestBannerProps> = ({ onAction }) => {
 
       {/* Rotation Indicator Dots */}
       {activeAds.length > 1 && (
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1 z-20">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20">
           {activeAds.map((_, i) => (
             <div 
               key={i} 
               onClick={() => setActiveIndex(i)}
-              className={`w-0.5 h-0.5 rounded-full transition-all cursor-pointer ${i === activeIndex ? 'bg-amber-500 w-2 shadow-[0_0_2px_rgba(245,158,11,0.5)]' : 'bg-white/20 hover:bg-white/40'}`}
+              className={`h-1 rounded-full transition-all duration-500 cursor-pointer ${i === activeIndex ? 'bg-amber-500 w-8 shadow-[0_0_10px_rgba(245,158,11,0.8)]' : 'bg-white/20 w-2 hover:bg-white/40'}`}
             />
           ))}
         </div>
+      )}
+
+      {/* Navigation Arrows */}
+      {activeAds.length > 1 && (
+        <>
+          <button 
+            onClick={() => setActiveIndex((prev) => (prev - 1 + activeAds.length) % activeAds.length)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/60 border border-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-30"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <button 
+            onClick={() => setActiveIndex((prev) => (prev + 1) % activeAds.length)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/20 hover:bg-black/60 border border-white/5 flex items-center justify-center text-white/40 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-30"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </>
       )}
     </div>
   );

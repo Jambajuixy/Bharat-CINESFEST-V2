@@ -25,7 +25,6 @@ const AppContent: React.FC = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Secret Keyboard Shortcut: Ctrl+Shift+A to access Backstage
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
         if (user?.role === UserRole.ADMIN) {
@@ -55,7 +54,13 @@ const AppContent: React.FC = () => {
   }
 
   const renderPage = () => {
-    switch (currentHash) {
+    const hash = currentHash;
+    
+    if (hash.startsWith('#/profile/')) {
+      return <Profile />;
+    }
+
+    switch (hash) {
       case '#/':
         return <Home />;
       case '#/profile':
@@ -109,7 +114,6 @@ const AppContent: React.FC = () => {
                 <span className="text-3xl font-serif font-bold gold-text tracking-widest leading-none">CINEFEST</span>
               </div>
               <p className="text-[10px] text-neutral-500 uppercase tracking-[0.3em]">
-                {/* Hidden Portal: Clicking the Copyright symbol as Admin triggers navigation */}
                 <span 
                   onClick={user?.role === UserRole.ADMIN ? goToBackstage : undefined}
                   className={user?.role === UserRole.ADMIN ? "cursor-pointer hover:text-amber-500/40 transition-colors" : ""}
